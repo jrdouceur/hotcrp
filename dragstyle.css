@@ -1,0 +1,92 @@
+/* dragstyle.css -- HotCRP styles for drag/drop, written by John R. Douceur */
+/* HotCRP is Copyright (c) 2006-2012 Eddie Kohler and Regents of the UC */
+/* Distributed under an MIT-like license; see LICENSE */
+
+div.body
+{
+	position: static; /* Override position:relative from style.css, because it interferes with dragging */
+}
+
+table.dragpapertable
+{
+    margin-left: 20px;
+    margin-top: 10px;
+}
+
+table#hiddentable
+{
+    visibility: hidden;
+}
+
+th#rankdivgap
+{
+    width: 20px;
+}
+
+td.subheading
+{
+    vertical-align: middle;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+td.dragcontainerholder
+{
+    vertical-align: top;
+}
+
+td.paperslot
+{
+    padding-top: 5px;
+}
+
+div.dragpaper
+{
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: nowrap;
+    cursor: move;
+    border: 1px solid black;
+    text-align: left;
+    padding: 1px 3px 1px 3px;
+    margin: 0;
+    width: 250px;
+    height: 18px;
+}
+
+div.nonghost
+{
+    position: relative;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+div.assigned
+{
+    background-color: #d8d8ff;
+}
+
+div.unassigned
+{
+    background-color: #e2e2e2;
+}
+
+div.dragpapercontainer
+{
+    width: 300px;
+    border: 2px solid black;
+    overflow-y: auto;
+}
+
+div#ghostpaper
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 32767;
+    visibility: hidden;
+}
