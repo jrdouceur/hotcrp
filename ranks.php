@@ -17,38 +17,63 @@ $Me->goIfNotPC();
 if (!$Conf->setting("tag_rank"))
 	$Me->goAlert(false, "This conference is not using ranking.");
 
-// if ($Conf->setting("pcrev_any") > 0 || $Me->privChair) then pc members can review any paper, in which case we should show the radio buttons, but not otherwise -- TODO
-
-// I copied this from offline.php; it might be appropriate to include something like this -- TODO
-/*
+// if ranking is disallowed, let the user know
+$pastDeadline = !$Conf->timeReviewPaper($Me->isPC, true, true);
 if ($pastDeadline && !$Conf->deadlinesAfter("rev_open"))
     $Conf->infoMsg("The site is not open for review.");
 else if ($pastDeadline)
-    $Conf->infoMsg("The <a href='" . hoturl("deadlines") . "'>deadline</a> for submitting reviews has passed.");
-*/
-// Alternatively, here is the related code from index.php
-/*
-    if ($Conf->timeReviewPaper($Me->isPC, true, false)) {
-        $d = $Conf->printableTimeSetting("${rtyp}soft");
-        if ($d == "N/A")
-        $d = $Conf->printableTimeSetting("${rtyp}hard");
-        if ($d != "N/A")
-        echo "  <span class='deadline'>Please submit your ", ($myrow[2] == 1 ? "review" : "reviews"), " by $d.</span><br />\n";
-    } else if ($Conf->timeReviewPaper($Me->isPC, true, true))
-        echo "  <span class='deadline'><strong class='overdue'>Reviews are overdue.</strong>  They were requested by " . $Conf->printableTimeSetting("${rtyp}soft") . ".</span><br />\n";
-    else if (!$Conf->timeReviewPaper($Me->isPC, true, true, true))
-        echo "  <span class='deadline'>The <a href='", hoturl("deadlines"), "'>deadline</a> for submitting " . ($Me->isPC ? "PC" : "external") . " reviews has passed.</span><br />\n";
-    else
-        echo "  <span class='deadline'>The site is not open for reviewing.</span><br />\n";
-    } else if ($Me->isPC && $Conf->timeReviewPaper(true, false, true)) {
-    $d = $Conf->printableTimeSetting("pcrev_soft");
-    if ($d != "N/A")
-        echo "  <span class='deadline'>The review deadline is $d.</span><br />\n";
-    }
-*/
+    $Conf->infoMsg("The <a href='" . hoturl("deadlines") . "'>deadline</a> for ranking papers has passed. " . ($Me->privChair ?
+        "You are allowed to change ranks only because you are chair." :
+        "Dragging has been disabled on this page." ));
 
-// construct and return a string of <tr/> elements for the unranked table
-function unrankedPaperTableRows()
+// note whether the user can rank all papers
+$canReviewAll = $Conf->setting("pcrev_any") > 0 || $Me->privChair;
+
+function tableRowForPaper($dbRow, $assigned) // one <tr/> element for the unranked table
+{
+    global $Me;
+
+    // record paper's ID and title, for referential convenience
+    $thisPaperId = $dbRow->paperId;
+    $thisPaperTitle = $dbRow->title;
+
+    // the HTML anchor element for the paper is the paper ID
+    $thisPaperAnchor = "<a href='" . hoturl("paper", "p=$thisPaperId") . "'>$thisPaperId</a>";
+
+    // this paper's class partly depends on whether it is assigned
+    $thisPaperClass = "dragpaper nonghost " . ($assigned ? "assigned" : "unassigned");
+
+    // return a <tr/> row iff the user is allowed to set this paper's rank
+    if ($Me->canSetRank($submittedPaperRow))
+    {
+        return "<tr><td class='paperslot'><div class='$thisPaperClass' id='paperref$thisPaperId'>#$thisPaperAnchor $thisPaperTitle</div></td></tr>\n";
+    }
+    else
+    {
+        return "";
+    }
+}
+
+function unrankedPaperTableRowsForAssignedPapers() // a string of <tr/> elements for the unranked table, if the user can review only assigned papers
+{
+    global $Conf, $Me;
+
+    // retrieve an SQL set of all assigned papers, in order of paper ID
+    $assignedPapersQuery = $Conf->paperQuery($Me, array("reviewId" => $Me->contactId, "finalized" => 1, "order" => "order by Paper.paperId"));
+    $assignedPapersSet = $Conf->qe($assignedPapersQuery, "while selecting papers");
+
+    $unrankedTableRows = "<tr>starting assigned</tr>"; // we'll build this into a series of <tr/> elements for the unranked table
+
+    // iterate through all papers in assignedPaperSet
+    for ($assignedPaperRow = edb_orow($assignedPapersSet); $assignedPaperRow != false; $assignedPaperRow = edb_orow($assignedPapersSet))
+    {
+        $unrankedTableRows .= tableRowForPaper($assignedPaperRow, true); // add <tr/> row to string
+    }
+
+    return $unrankedTableRows;
+}
+
+function unrankedPaperTableRowsForSubmittedPapers() // a string of <tr/> elements for the unranked table, if the user can review all submitted papers
 {
     global $Conf, $Me;
 
@@ -66,24 +91,11 @@ function unrankedPaperTableRows()
     $assignedPaperRow = edb_orow($assignedPapersSet);
     for ($submittedPaperRow = edb_orow($submittedPapersSet); $submittedPaperRow != false; $submittedPaperRow = edb_orow($submittedPapersSet))
     {
-        // record paper's ID and title, for convenience
-        $thisPaperId = $submittedPaperRow->paperId;
-        $thisPaperTitle = $submittedPaperRow->title;
-
-        // the HTML anchor element for the paper is the paper ID
-        $thisPaperAnchor = "<a href='" . hoturl("paper", "p=$thisPaperId") . "'>$thisPaperId</a>";
-
         // if this paper's ID matches a paper ID in the assigned set, this paper is assigned
-        $thisPaperIsAssigned = $assignedPaperRow != null && $thisPaperId == $assignedPaperRow->paperId;
+        $thisPaperIsAssigned = $assignedPaperRow != null && $submittedPaperRow->paperId == $assignedPaperRow->paperId;
 
-        // this paper's class partly depends on whether it is assigned
-        $thisPaperClass = "dragpaper nonghost" . ($thisPaperIsAssigned ? " assigned" : " unassigned");
-
-        // add a <tr/> row to the string we're building iff the user is allowed to set this paper's rank
-        if ($Me->canSetRank($submittedPaperRow))
-        {
-            $unrankedTableRows .= "<tr><td class='paperslot'><div class='$thisPaperClass' id='paperref$thisPaperId'>#$thisPaperAnchor $thisPaperTitle</div></td></tr>\n";
-        }
+        // add <tr/> row to string
+        $unrankedTableRows .= tableRowForPaper($submittedPaperRow, $thisPaperIsAssigned);
 
         // if the current paper is assigned, we are done with this assigned row, and we need to start comparing against the subsequent row
         if ($thisPaperIsAssigned)
@@ -95,8 +107,14 @@ function unrankedPaperTableRows()
     return $unrankedTableRows;
 }
 
-// construct and return a string of JS function invocations for the setInitialPaperRanks() JS function
-function invocationsOfChangePaperRank()
+function unrankedPaperTableRows() // a string of <tr/> elements for the unranked table
+{
+    global $canReviewAll;
+
+    return $canReviewAll ? unrankedPaperTableRowsForSubmittedPapers() : unrankedPaperTableRowsForAssignedPapers();
+}
+
+function invocationsOfChangePaperRank() // a string of JS function invocations for the setInitialPaperRanks() JS function
 {
     global $Conf, $Me;
 
@@ -130,20 +148,16 @@ function invocationsOfChangePaperRank()
 // Standard HotCRP header; this function also inserts the <body> tag
 $Conf->header("Paper Ranks", "paperranks", actionBar());
 
-$Conf->infoMsg("<p>
-Use this page to rank the papers you have read.
+$Conf->infoMsg("<p>Use this page to rank the papers you have read.
 Papers in the Unranked pane are ordered by paper ID; papers in the ranked pane are ordered by rank.
 To set ranks, drag papers from the Unranked pane to the Ranked pane, or drag papers up and down within the Ranked pane.
-To clear a rank, drag a paper back to the Unranked pane.
-</p><p>
-The radio buttons select which papers are displayed in the Unranked pane only; the Ranked pane always displays every paper you have ranked.
-Papers you have been assigned to review are shown in blue; all others are shown in gray.
-</p><p>
-You can also upload rankings via the <a href='" . hoturl("offline") . "'>offline</a> page.
-</p>");
+To clear a rank, drag a paper back to the Unranked pane.</p>" .
+($canReviewAll ? "<p>The radio buttons select which papers are displayed in the Unranked pane only; the Ranked pane always displays every paper you have ranked.
+Papers you have been assigned to review are shown in blue; all others are shown in gray.</p>" : "") .
+"<p>You can also upload rankings via the <a href='" . hoturl("offline") . "'>offline</a> page.</p>");
 
 $Conf->infoMsg("<p>
-Note: This page enforces strict ranking with no gaps.
+Note: This page enforces strict sequential ranking.
 If you have used the offline page to insert gaps or to mark papers as equal rank, making any change with this page will cause your gaps and equalities to be lost.
 </p>");
 
@@ -155,7 +169,7 @@ If you have used the offline page to insert gaps or to mark papers as equal rank
 
     <br />
     <form id="rankform" action="<?= hoturl_post("search", "ajax=1&amp;tagact=1&amp;tag=%7E{$Conf->settingText('tag_rank')}") ?>" method="post">
-        <input type="button" name="revertchanges" value="Revert changes" onclick="revertChanges()" />
+        <input type="button" name="revertchanges" value="Undo all changes" onclick="revertChanges()" />
         <input type="button" name="undochange" value="Undo change" onclick="undoChange()" />
         <input type="button" name="redochange" value="Redo change" onclick="redoChange()" />
         <input type="button" name="savechanges" value="Save all changes" onclick="saveChanges()" />
@@ -173,20 +187,22 @@ If you have used the offline page to insert gaps or to mark papers as equal rank
             </tr>
             <tr>
                 <td class="subheading">
-                    <center>
-                        <form action="">
-                            <table>
-                                <tr align="left">
-                                    <td><input type="radio" name="paperstoshow" id="showassignedpapers" checked="checked"/></td>
-                                    <td><label for="showassignedpapers">Show your assigned reviews</label></td>
-                                </tr>
-                                <tr align="left">
-                                    <td><input type="radio" name="paperstoshow" id="showsubmittedpapers" /></td>
-                                    <td><label for="showsubmittedpapers">Show all submitted papers</label></td>
-                                </tr>
-                            </table>
-                        </form>
-                    </center>
+                    <?php if ($canReviewAll) { ?>
+                        <center>
+                            <form action="">
+                                <table>
+                                    <tr align="left">
+                                        <td><input type="radio" name="paperstoshow" id="showassignedpapers" checked="checked"/></td>
+                                        <td><label for="showassignedpapers">Show your assigned reviews</label></td>
+                                    </tr>
+                                    <tr align="left">
+                                        <td><input type="radio" name="paperstoshow" id="showsubmittedpapers" /></td>
+                                        <td><label for="showsubmittedpapers">Show all submitted papers</label></td>
+                                    </tr>
+                                </table>
+                            </form>
+                        </center>
+                    <?php } ?>
                 </td>
                 <td></td>
                 <td class="subheading"><center>(order from best to worst)</center></td>
@@ -261,9 +277,15 @@ function initRankingPage()
     $$("rankform").redochange.disabled = true;
     $$("rankform").savechanges.disabled = true;
 
-    // bind events to our handlers
+    <?php if (!$pastDeadline || $Me->privChair) { // drag operations are allowed only if reviewing is allowed ?>
+
+    // bind mousedown events to handler
     $$("unrankedinnerdiv").onmousedown = startDrag;
     $$("rankedinnerdiv").onmousedown = startDrag;
+
+    <?php } ?>
+
+    // bind onresize event to handler
     window.onresize = setOuterDivHeights;
 
     // create a closure for updating the display of unranked papers according to the radio buttons
@@ -329,9 +351,13 @@ function createRadioButtonChangeClosure()
         setRankedInnerDivHeight(); // note: this function calls setOuterDivHeights(), so we don't need to call it explicitly
     }
 
-    // the above function must be called whenever the radio-button state changes
-    $$("showassignedpapers").onclick = updateUnrankedPaperContainerToMatchRadioButtons;
-    $$("showsubmittedpapers").onclick = updateUnrankedPaperContainerToMatchRadioButtons;
+    <?php if ($canReviewAll) { ?>
+
+        // the above function must be called whenever the radio-button state changes
+        $$("showassignedpapers").onclick = updateUnrankedPaperContainerToMatchRadioButtons;
+        $$("showsubmittedpapers").onclick = updateUnrankedPaperContainerToMatchRadioButtons;
+
+    <?php } ?>
 
     // the above function must also be called at page load time, so we do it now
     updateUnrankedPaperContainerToMatchRadioButtons();
@@ -907,7 +933,11 @@ function extractNumber(value)
 // return an array of classes (strings) that indicate the state of the radio buttons
 function radioButtonClassArray()
 {
-    return $$("showassignedpapers").checked ? [ "assigned" ] : [ ];
+    <?php if ($canReviewAll) { ?>
+        return $$("showassignedpapers").checked ? [ "assigned" ] : [ ];
+    <?php } else { ?>
+        return [ "assigned" ];
+    <?php } ?>
 }
 
 // determine whether a given class string contains every class in an array
