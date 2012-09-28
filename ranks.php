@@ -59,10 +59,10 @@ function unrankedPaperTableRowsForAssignedPapers() // a string of <tr/> elements
     global $Conf, $Me;
 
     // retrieve an SQL set of all assigned papers, in order of paper ID
-    $assignedPapersQuery = $Conf->paperQuery($Me, array("reviewId" => $Me->contactId, "finalized" => 1, "order" => "order by Paper.paperId"));
+    $assignedPapersQuery = $Conf->paperQuery($Me, array("myReviews" => 1, "finalized" => 1, "order" => "order by Paper.paperId"));
     $assignedPapersSet = $Conf->qe($assignedPapersQuery, "while selecting papers");
 
-    $unrankedTableRows = "<tr>starting assigned</tr>"; // we'll build this into a series of <tr/> elements for the unranked table
+    $unrankedTableRows = ""; // we'll build this into a series of <tr/> elements for the unranked table
 
     // iterate through all papers in assignedPaperSet
     for ($assignedPaperRow = edb_orow($assignedPapersSet); $assignedPaperRow != false; $assignedPaperRow = edb_orow($assignedPapersSet))
@@ -82,7 +82,7 @@ function unrankedPaperTableRowsForSubmittedPapers() // a string of <tr/> element
     $submittedPapersSet = $Conf->qe($submittedPapersQuery, "while selecting papers");
 
     // retrieve an SQL set of all assigned papers, in order of paper ID
-    $assignedPapersQuery = $Conf->paperQuery($Me, array("reviewId" => $Me->contactId, "finalized" => 1, "order" => "order by Paper.paperId"));
+    $assignedPapersQuery = $Conf->paperQuery($Me, array("myReviews" => 1, "finalized" => 1, "order" => "order by Paper.paperId"));
     $assignedPapersSet = $Conf->qe($assignedPapersQuery, "while selecting papers");
 
     $unrankedTableRows = ""; // we'll build this into a series of <tr/> elements for the unranked table
