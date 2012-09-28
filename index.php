@@ -573,18 +573,38 @@ if ($Me->amReviewer() && ($Me->privChair || $papersub)) {
 	    echo "&nbsp; <small>(<a href='", hoturl("users", "t=pc&amp;score%5B%5D=0"), "'>Details</a>)</small>";
 	echo "<br />\n";
     }
-    if ($myrow && $myrow[1] < $myrow[2]) {
+    if ($Me->isPC && $Conf->setting("tag_rank")) {
+	echo "<h4>Ranks: &nbsp;</h4> ";
+	$tag_rank = $Me->contactId . "~" . $Conf->settingText("tag_rank");
+	$rankresult = $Conf->qe("select count(PaperReview.reviewNeedsSubmit) from Paper join PaperReview on (Paper.paperId=PaperReview.paperId and PaperReview.contactId={$Me->contactId}) join PaperTag on (Paper.paperId=PaperTag.paperId and PaperTag.tag=\"$tag_rank\") where (Paper.timeSubmitted>0) group by PaperTag.tag");
+	$row = edb_row($rankresult);
+	$rankedPapers = $row ? $row[0] : 0;
+	if ($myrow && $myrow[2] > 1)
+	    echo "You have <a href='" . hoturl("ranks") . "'>ranked</a> $rankedPapers of your {$myrow[2]} assigned papers<br />\n";
+	$tag_rank = "~" . $Conf->settingText("tag_rank");
+	$tag_length = strlen($tag_rank);
+	$rankresult = $Conf->qe("select count(*) from PaperTag where (substr(PaperTag.tag,-$tag_length)=\"$tag_rank\")");
+	$row = edb_row($rankresult);
+	echo sprintf("  The average PC member has ranked %.1f papers<br />\n", $row[0] / $npc);
+    }
+    $reviewsNeeded = $myrow && $myrow[1] < $myrow[2];
+    $ranksNeeded = $Me->isPC && $Conf->setting("tag_rank") && $myrow && $myrow[2] > 1 && $rankedPapers < $myrow[2];
+    if ($reviewsNeeded || $ranksNeeded) {
+	if ($reviewsNeeded && $ranksNeeded)
+	    $whatNeeded = "reviews and ranks";
+	else
+	    $whatNeeded = $reviewsNeeded ? "reviews" : "ranks";
 	$rtyp = ($Me->isPC ? "pcrev_" : "extrev_");
 	if ($Conf->timeReviewPaper($Me->isPC, true, false)) {
 	    $d = $Conf->printableTimeSetting("${rtyp}soft", "span");
 	    if ($d == "N/A")
 		$d = $Conf->printableTimeSetting("${rtyp}hard", "span");
 	    if ($d != "N/A")
-		echo "  <span class='deadline'>Please submit your ", ($myrow[2] == 1 ? "review" : "reviews"), " by $d.</span><br />\n";
+		echo "  <span class='deadline'>Please submit your ", ($myrow[2]==1 ? "review" : $whatNeeded), " by $d.</span><br />\n";
 	} else if ($Conf->timeReviewPaper($Me->isPC, true, true))
-	    echo "  <span class='deadline'><strong class='overdue'>Reviews are overdue.</strong>  They were requested by " . $Conf->printableTimeSetting("${rtyp}soft", "span") . ".</span><br />\n";
+	    echo "  <span class='deadline'><strong class='overdue'>Paper $whatNeeded are overdue.</strong>  They were requested by " . $Conf->printableTimeSetting("${rtyp}soft", "span") . ".</span><br />\n";
 	else if (!$Conf->timeReviewPaper($Me->isPC, true, true, true))
-	    echo "  <span class='deadline'>The <a href='", hoturl("deadlines"), "'>deadline</a> for submitting " . ($Me->isPC ? "PC" : "external") . " reviews has passed.</span><br />\n";
+	    echo "  <span class='deadline'>The <a href='", hoturl("deadlines"), "'>deadline</a> for submitting " . ($Me->isPC ? "PC" : "external") . " $whatNeeded has passed.</span><br />\n";
 	else
 	    echo "  <span class='deadline'>The site is not open for reviewing.</span><br />\n";
     } else if ($Me->isPC && $Conf->timeReviewPaper(true, false, true)) {
@@ -614,6 +634,9 @@ if ($Me->amReviewer() && ($Me->privChair || $papersub)) {
     if ($Me->isPC && $Conf->timePCReviewPreferences()) {
 	echo $sep, "<a href='", hoturl("reviewprefs"), "'>Review preferences</a>";
 	$sep = $xsep;
+    }
+    if ($Me->isPC && $Conf->setting("tag_rank")) {
+	echo $sep, "<a href='", hoturl("ranks"), "'>Your paper ranks</a>";
     }
     if ($Conf->deadlinesAfter("rev_open") || $Me->privChair) {
 	echo $sep, "<a href='", hoturl("offline"), "'>Offline reviewing</a>";

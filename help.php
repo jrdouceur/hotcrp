@@ -741,11 +741,15 @@ and chooses Tags &gt; Calculate&nbsp;rank, entering
 by a <a href='" . hoturl("search", "q=order:rank") . "'>search for
 “order:rank”</a>.</p>
 
-<p>PC members may enter rankings by manipulating tags directly, but it will
-generally be easier to use the <a href='" . hoturl("offline") . "'>offline
-ranking form</a>.  Download a ranking file, rearrange the lines to create a
-rank, and upload the form again.  For example, here is an initial ranking
-file:</p>
+<p>PC members have three options for entering rankings. The most direct but
+least convenient option is to manipulate tags directly. A much more
+convenient option is to use the <a href='" . hoturl("ranks") . "'>ranking</a>
+page, which provides an intuitive drag-and-drop interface for ordering
+papers by rank; however, this option is limited to strict sequential ranking
+&mdash; no gaps or equal ranks are permitted. The final option is to use the
+<a href='" . hoturl("offline") . "'>offline ranking form</a> to download a
+ranking file, rearrange the lines to create a ranking, and upload the file.
+For example, here is an initial ranking file:</p>
 
 <pre class='entryexample'>
 # Edit the rank order by rearranging this file's lines.
