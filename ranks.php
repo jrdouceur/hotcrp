@@ -44,7 +44,7 @@ function tableRowForPaper($dbRow, $assigned) // one <tr/> element for the unrank
     $thisPaperClass = "dragpaper nonghost " . ($assigned ? "assigned" : "unassigned");
 
     // return a <tr/> row iff the user is allowed to set this paper's rank
-    if ($Me->canSetRank($submittedPaperRow))
+    if ($Me->canSetRank($dbRow))
     {
         return "<tr><td class='paperslot'><div class='$thisPaperClass' id='paperref$thisPaperId'>#$thisPaperAnchor $thisPaperTitle</div></td></tr>\n";
     }
@@ -114,9 +114,13 @@ function unrankedPaperTableRows() // a string of <tr/> elements for the unranked
     return $canReviewAll ? unrankedPaperTableRowsForSubmittedPapers() : unrankedPaperTableRowsForAssignedPapers();
 }
 
-function invocationsOfChangePaperRank() // a string of JS function invocations for the setInitialPaperRanks() JS function
+// initial rank info, to set by the function immediately below
+$initialRankingIsStrict = null;       // will be set to false if the initial ranking contains gaps or equalities
+$invocationsOfChangePaperRank = null; // a string of JS function invocations for the setInitialPaperRanks() JS function
+
+function computeInitialRankInfo()
 {
-    global $Conf, $Me;
+    global $Conf, $Me, $initialRankingIsStrict, $invocationsOfChangePaperRank;
 
     // the tag used for this reviewer's ranks
     $tag_rank = $Me->contactId . "~" . $Conf->settingText("tag_rank");
@@ -124,8 +128,10 @@ function invocationsOfChangePaperRank() // a string of JS function invocations f
     // retrieve an SQL set of all ranked papers, in order of rank
     $rankedPapersQuery = $Conf->paperQuery($Me, array("tagIndex" => $tag_rank, "finalized" => 1, "order" => "order by tagIndex"));
     $rankedPapersSet = $Conf->qe($rankedPapersQuery, "while selecting papers");
+    
+    $initialRankingIsStrict = true; // true by default, unless we observe an exception
 
-    $changeInvocations = ""; // we'll build this into a series of JS function invocations
+    $invocationsOfChangePaperRank = ""; // we'll build this into a series of JS function invocations
 
     // iterate through ranked papers in order
     $rankForPaper = 1;
@@ -134,16 +140,23 @@ function invocationsOfChangePaperRank() // a string of JS function invocations f
         // record paper's ID, for convenience
         $thisPaperId = $rankedPaperRow->paperId;
 
-        // add a JS function invocation to the string we're building iff this paper is ranked by this user
-        if ($Me->canSetRank($rankedPaperRow) && $rankedPaperRow->tagIndex !== null)
+        if ($Me->canSetRank($rankedPaperRow) && $rankedPaperRow->tagIndex !== null) // this paper has been ranked by this user
         {
-            $changeInvocations .= "changePaperFromOldRankToNewRank(\$\$('paperref$thisPaperId'), 0, $rankForPaper);\n";
+            // check for violation of strict ranking
+            if ($rankForPaper != $rankedPaperRow->tagIndex)
+            {
+                $initialRankingIsStrict = false;
+            }
+
+            // add a JS function invocation to the string we're building
+            $invocationsOfChangePaperRank .= "changePaperFromOldRankToNewRank(\$\$('paperref$thisPaperId'), 0, $rankForPaper);\n";
             $rankForPaper++;
         }
     }
-
-    return $changeInvocations;
 }
+
+// invoke the above immediately function
+computeInitialRankInfo();
 
 // Standard HotCRP header; this function also inserts the <body> tag
 $Conf->header("Paper Ranks", "paperranks", actionBar());
@@ -156,10 +169,13 @@ To clear a rank, drag a paper back to the Unranked pane.</p>" .
 Papers you have been assigned to review are shown in blue; all others are shown in gray.</p>" : "") .
 "<p>You can also upload rankings via the <a href='" . hoturl("offline") . "'>offline</a> page.</p>");
 
-$Conf->infoMsg("<p>
-Note: This page enforces strict sequential ranking.
-If you have used the offline page to insert gaps or to mark papers as equal rank, making any change with this page will cause your gaps and equalities to be lost.
-</p>");
+if (!$initialRankingIsStrict)
+{
+    $Conf->infoMsg("<p>This page supports only strict sequential ranking.
+    You have used the offline page to insert ranking gaps or to mark papers as equal rank.
+    If you make any change with this page, your gaps and equalities will be lost.
+    Subsequent use of the Undo buttons will not restore your ranking gaps or equalities.</p>");
+}
 
 // end of the main PHP block; below this point is HTML and JavaScript with embedded PHP, up until the footer stuff at the very end
 ?>
@@ -169,10 +185,12 @@ If you have used the offline page to insert gaps or to mark papers as equal rank
 
     <br />
     <form id="rankform" action="<?= hoturl_post("search", "ajax=1&amp;tagact=1&amp;tag=%7E{$Conf->settingText('tag_rank')}") ?>" method="post">
-        <input type="button" name="revertchanges" value="Undo all changes" onclick="revertChanges()" />
+        <input type="button" name="undoallchanges" value="Undo all changes" onclick="undoAllChanges()" />
         <input type="button" name="undochange" value="Undo change" onclick="undoChange()" />
         <input type="button" name="redochange" value="Redo change" onclick="redoChange()" />
-        <input type="button" name="savechanges" value="Save all changes" onclick="saveChanges()" />
+        <input type="button" name="redoallchanges" value="Redo all changes" onclick="redoAllChanges()" />
+        <br /><br />
+        <input type="button" name="saveranks" value="Save ranks" onclick="saveRanks()" />
         <input type="hidden" name="tagtype" value="" />
         <input type="hidden" name="p" value="" />
     </form>
@@ -246,7 +264,7 @@ If you have used the offline page to insert gaps or to mark papers as equal rank
 function setInitialPaperRanks()
 {
     // these calls must be ordered by increasing rank
-    <?= invocationsOfChangePaperRank() ?>
+    <?= $invocationsOfChangePaperRank ?>
 }
 </script>
 
@@ -272,10 +290,11 @@ var redoLog = new Array(); // redo log of drag/drop operations
 function initRankingPage()
 {
     // initially, there are no changes to post, to undo, or to redo
-    $$("rankform").revertchanges.disabled = true;
+    $$("rankform").undoallchanges.disabled = true;
     $$("rankform").undochange.disabled = true;
     $$("rankform").redochange.disabled = true;
-    $$("rankform").savechanges.disabled = true;
+    $$("rankform").redoallchanges.disabled = true;
+    $$("rankform").saveranks.disabled = true;
 
     <?php if (!$pastDeadline || $Me->privChair) { // drag operations are allowed only if reviewing is allowed ?>
 
@@ -363,33 +382,37 @@ function createRadioButtonChangeClosure()
     updateUnrankedPaperContainerToMatchRadioButtons();
 }
 
+// disable user input, to be called before beginning a network operation that changes ranks
 function disableButtonsAndDragging()
 {
-    // disable the revert, undo, redo, and save buttons
-    $$("rankform").revertchanges.disabled = true;
+    // disable the undo, redo, and save buttons
+    $$("rankform").undoallchanges.disabled = true;
     $$("rankform").undochange.disabled = true;
     $$("rankform").redochange.disabled = true;
-    $$("rankform").savechanges.disabled = true;
+    $$("rankform").redoallchanges.disabled = true;
+    $$("rankform").saveranks.disabled = true;
 
     // disable dragging
     $$("unrankedinnerdiv").onmousedown = null;
     $$("rankedinnerdiv").onmousedown = null;
 }
 
+// restore user input, to be called after completing a network operation that changes ranks
 function enableButtonsAndDragging()
 {
     if (undoLog.length > 0) // the undo log is non-empty
     {
-        // there are changes that can be reverted, undone, or saved
-        $$("rankform").revertchanges.disabled = false;
+        // there are changes that can be undone or saved
+        $$("rankform").undoallchanges.disabled = false;
         $$("rankform").undochange.disabled = false;
-        $$("rankform").savechanges.disabled = false;
+        $$("rankform").saveranks.disabled = false;
     }
 
     if (redoLog.length > 0) // the redo log is non-empty
     {
         // there are changes that can be redone
         $$("rankform").redochange.disabled = false;
+        $$("rankform").redoallchanges.disabled = false;
     }
 
     // enable dragging
@@ -603,8 +626,8 @@ function updateUnrankedPapersAccordingToClassArray(classArray)
     }
 }
 
-// revert all changes in papers' ranks
-function revertChanges()
+// undo all changes in papers' ranks
+function undoAllChanges()
 {
     // disable user input until the update is complete
     disableButtonsAndDragging();
@@ -664,8 +687,31 @@ function redoChange()
     submitRanksToServer();
 }
 
+// redo all changes in papers' ranks
+function redoAllChanges()
+{
+    // disable user input until the update is complete
+    disableButtonsAndDragging();
+
+    // redo every change in the redo log
+    while (redoLog.length > 0)
+    {
+        // pop the drag/drop from the redo log
+        var dragdrop = redoLog.pop();
+
+        // move the element from the source to the destination
+        changePaperFromOldRankToNewRank(dragdrop.paperDiv, dragdrop.sourceRank, dragdrop.destRank);
+
+        // record drag/drop in undo log
+        undoLog.push(dragdrop);
+    }
+
+    // send rank info from the ranked table to the server
+    submitRanksToServer();
+}
+
 // save all changes in papers' ranks
-function saveChanges()
+function saveRanks()
 {
     // disable user input until the update is complete
     disableButtonsAndDragging();
@@ -781,7 +827,7 @@ function submitRanksToServer()
         $$("rankform").p.value = rankedPaperString.substr(1); // remove leading space
     }
 
-    // submit form to server
+    // submit form to server, re-enabling user input on completion
     Miniajax.submit("rankform", function (rv) { enableButtonsAndDragging(); } );
 }
 
