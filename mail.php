@@ -110,7 +110,7 @@ function contactQuery($type) {
 	$where[] = "PaperReview.reviewSubmitted is null and PaperReview.reviewNeedsSubmit!=0";
     if ($type == "extrev" || $type == "myextrev" || $type == "uncextrev" || $type == "myuncextrev")
 	$where[] = "PaperReview.reviewType=" . REVIEW_EXTERNAL;
-    else if ($type == "pcrev" || $type == "uncpcrev" || $type == "newpcrev")
+    else if ($type == "pcrev" || $type == "uncpcrev" || $type == "newpcrev" || $type == "unrankpc")
 	$where[] = "PaperReview.reviewType>" . REVIEW_EXTERNAL;
     if ($type == "myextrev" || $type == "myuncextrev")
 	$where[] = "PaperReview.requestedBy=" . $Me->contactId;
@@ -129,6 +129,12 @@ function contactQuery($type) {
     } else if ($type == "rev" || $type == "crev" || $type == "uncrev" || $type == "extrev" || $type == "myextrev" || $type == "uncextrev" || $type == "myuncextrev" || $type == "pcrev" || $type == "uncpcrev" || $type == "newpcrev") {
 	$q = "select $contactInfo, 0 as conflictType, $paperInfo, PaperReview.reviewType, PaperReview.reviewType as myReviewType from PaperReview join Paper using (paperId) join ContactInfo using (contactId) left join PCMember on (PCMember.contactId=ContactInfo.contactId)";
 	$orderby = "email, Paper.paperId";
+    } else if ($type == "unrankpc") {
+	$tag_rank = "~" . $Conf->settingText("tag_rank");
+	$q = "select $contactInfo, 0 as conflictType, $paperInfo, PaperReview.reviewType, PaperReview.reviewType as myReviewType, group_concat(PaperTag.tag) tags from PaperReview join Paper using (paperId) join ContactInfo using (contactId) join PCMember on (PCMember.contactId=ContactInfo.contactId) left join PaperTag on (Paper.paperId=PaperTag.paperId)";
+	$groupby = "PaperReview.contactId, PaperReview.paperId";
+	$having = "tags is null or find_in_set(concat(PaperReview.contactId,'$tag_rank'),tags) = 0";
+	$orderby = "email, Paper.paperId";
     } else if ($type == "lead" || $type == "shepherd") {
 	$q = "select $contactInfo, conflictType, $paperInfo, PaperReview.reviewType, PaperReview.reviewType as myReviewType from Paper join ContactInfo on (ContactInfo.contactId=Paper.${type}ContactId) left join PaperReview on (PaperReview.paperId=Paper.paperId and PaperReview.contactId=ContactInfo.contactId) left join PaperConflict on (PaperConflict.paperId=Paper.paperId and PaperConflict.contactId=ContactInfo.contactId) left join PCMember on (PCMember.contactId=ContactInfo.contactId)";
 	$orderby = "email, Paper.paperId";
@@ -145,7 +151,16 @@ function contactQuery($type) {
     }
 
     $where[] = "email not regexp '^anonymous[0-9]*\$'";
-    return $q . " where " . join(" and ", $where) . " order by " . $orderby;
+
+    $q .= " where " . join(" and ", $where);
+    if (isset($groupby)) {
+	$q .= " group by " . $groupby;
+	if (isset($having))
+	    $q .= " having " . $having;
+    }
+    $q .= " order by " . $orderby;
+
+    return $q;
 }
 
 function checkMailPrologue($send) {
@@ -385,6 +400,8 @@ if ($Me->privChair) {
     $recip["uncrev"] = "Reviewers with incomplete reviews";
     $recip["pcrev"] = "PC reviewers";
     $recip["uncpcrev"] = "PC reviewers with incomplete reviews";
+    if ($Conf->setting("tag_rank"))
+	$recip["unrankpc"] = "PC reviewers with incomplete rankings";
     if ($Conf->sversion >= 46) {
 	$result = $Conf->q("select paperId from PaperReview where reviewType>=" . REVIEW_PC . " and timeRequested>timeRequestNotified and reviewSubmitted is null and reviewNeedsSubmit!=0");
 	if (edb_nrows($result) > 0)
