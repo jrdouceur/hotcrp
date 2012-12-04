@@ -385,6 +385,29 @@ Contact the site administrator, %ADMIN%, with any questions or concerns.
 
 - %CONFSHORTNAME% Submissions\n"),
 
+     "rankremind" =>
+     array("mailtool_name" => "Ranking reminder",
+	   "mailtool_priority" => 22,
+	   "mailtool_recipients" => "unrankpc",
+	   "subject" => "[%CONFSHORTNAME%] Ranking reminder for paper #%NUMBER% %TITLEHINT%",
+	   "body" => "Dear %NAME%,
+
+This is a reminder to rank paper #%NUMBER% for %CONFNAME% . %IF(REVIEWDEADLINE)% Rankings are requested by %REVIEWDEADLINE%. %ENDIF%
+
+       Title: %TITLE%
+     Authors: %OPT(AUTHORS)%
+  Paper site: %URL(paper, p=%NUMBER%)%
+
+Use the link below to rank your asigned papers.
+
+%URL%/ranks.php
+
+Thank you for your help -- we appreciate that reviewing is hard work.
+
+Contact the site administrator, %ADMIN%, with any questions or concerns.
+
+- %CONFSHORTNAME% Submissions\n"),
+
      "newpcrev" =>
      array("mailtool_name" => "Review assignment notification",
 	   "mailtool_recipients" => "newpcrev",

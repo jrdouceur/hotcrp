@@ -485,6 +485,8 @@ echo "<form method='post' action='", hoturl_post("mail", "check=1"), "' enctype=
 <div class='aa' style='padding-left:8px'>
   <strong>Template:</strong> &nbsp;";
 $tmpl = array();
+if (!$Conf->setting("tag_rank"))
+    unset($mailTemplates["rankremind"]["mailtool_name"]);
 foreach ($mailTemplates as $k => $v) {
     if (isset($v["mailtool_name"])
 	&& ($Me->privChair || defval($v, "mailtool_pc")))
