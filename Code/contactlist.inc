@@ -351,6 +351,8 @@ class ContactList extends BaseList {
 	    $a1 = "<a href=\"" . hoturl("search", "t=s&amp;q=re:" . urlencode($row->email)) . "\">";
 	    if ($row->numReviews == $row->numRanksSubmitted)
 		return "$a1<b>$row->numRanksSubmitted</b></a>";
+	    else if (!$row->numRanksSubmitted)
+		return "$a1<b>0</b>/$row->numReviews</a>";
 	    else
 		return "$a1<b>$row->numRanksSubmitted</b>/$row->numReviews</a>";
 	case self::FIELD_LEADS:
