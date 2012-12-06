@@ -576,14 +576,14 @@ if ($Me->amReviewer() && ($Me->privChair || $papersub)) {
     if ($Me->isPC && $Conf->setting("tag_rank")) {
 	echo "<h4>Ranks: &nbsp;</h4> ";
 	$tag_rank = $Me->contactId . "~" . $Conf->settingText("tag_rank");
-	$rankresult = $Conf->qe("select count(PaperReview.reviewNeedsSubmit) from Paper join PaperReview on (Paper.paperId=PaperReview.paperId and PaperReview.contactId={$Me->contactId}) join PaperTag on (Paper.paperId=PaperTag.paperId and PaperTag.tag=\"$tag_rank\") where (Paper.timeSubmitted>0) group by PaperTag.tag");
+	$rankresult = $Conf->qe("select count(*) from PaperTag where (tag=\"$tag_rank\")");
 	$row = edb_row($rankresult);
 	$rankedPapers = $row ? $row[0] : 0;
 	if ($myrow && $myrow[2] > 1)
-	    echo "You have <a href='" . hoturl("ranks") . "'>ranked</a> $rankedPapers of your {$myrow[2]} assigned papers<br />\n";
+	    echo "You have <a href='" . hoturl("ranks") . "'>ranked</a> $rankedPapers papers<br />\n";
 	$tag_rank = "~" . $Conf->settingText("tag_rank");
 	$tag_length = strlen($tag_rank);
-	$rankresult = $Conf->qe("select count(*) from PaperTag where (substr(PaperTag.tag,-$tag_length)=\"$tag_rank\")");
+	$rankresult = $Conf->qe("select count(*) from PaperTag where (right(PaperTag.tag,$tag_length)=\"$tag_rank\")");
 	$row = edb_row($rankresult);
 	echo sprintf("  The average PC member has ranked %.1f papers<br />\n", $row[0] / $npc);
     }
