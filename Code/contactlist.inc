@@ -86,7 +86,7 @@ class ContactList extends BaseList {
 	if ($fieldId == self::FIELD_REVIEWS)
 	    $queryOptions['reviews'] = true;
 	if ($fieldId == self::FIELD_RANKS)
-	    $queryOptions['ranks'] = $queryOptions['reviews'] = true;
+	    $queryOptions['ranks'] = true;
 	if ($fieldId == self::FIELD_LEADS)
 	    $queryOptions["leads"] = true;
 	if ($fieldId == self::FIELD_SHEPHERDS)
@@ -152,7 +152,6 @@ class ContactList extends BaseList {
 
     function _sortRanks($a, $b) {
 	$x = $b->numRanksSubmitted - $a->numRanksSubmitted;
-	$x = $x ? $x : $b->numReviews - $a->numReviews;
 	return $x ? $x : self::_sortBase($a, $b);
     }
 
@@ -254,7 +253,7 @@ class ContactList extends BaseList {
 	case self::FIELD_REVIEWS:
 	    return "<span class='hastitle' title='\"1/2\" means 1 complete review out of 2 assigned reviews'>Reviews</span>";
 	case self::FIELD_RANKS:
-	    return "<span class='hastitle' title='\"1/2\" means 1 submitted rank out of 2 assigned reviews'>Ranks</span>";
+	    return "Ranks";
 	case self::FIELD_LEADS:
 	    return "Leads";
 	case self::FIELD_SHEPHERDS:
@@ -346,15 +345,9 @@ class ContactList extends BaseList {
 	    else
 		return "$a1<b>$row->numReviewsSubmitted</b>/$row->numReviews</a>";
 	case self::FIELD_RANKS:
-	    if (!$row->numReviews && !$row->numRanksSubmitted)
+	    if (!$row->numRanksSubmitted)
 		return "";
-	    $a1 = "<a href=\"" . hoturl("search", "t=s&amp;q=re:" . urlencode($row->email)) . "\">";
-	    if ($row->numReviews == $row->numRanksSubmitted)
-		return "$a1<b>$row->numRanksSubmitted</b></a>";
-	    else if (!$row->numRanksSubmitted)
-		return "$a1<b>0</b>/$row->numReviews</a>";
-	    else
-		return "$a1<b>$row->numRanksSubmitted</b>/$row->numReviews</a>";
+	    return "<a href=\"" . hoturl("search", "t=s&amp;q=re:" . urlencode($row->email)) . "\"><b>$row->numRanksSubmitted</b></a>";
 	case self::FIELD_LEADS:
 	    if (!$row->numLeads)
 		return "";
