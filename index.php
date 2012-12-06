@@ -579,7 +579,7 @@ if ($Me->amReviewer() && ($Me->privChair || $papersub)) {
 	$rankresult = $Conf->qe("select count(*) from PaperTag where (tag=\"$tag_rank\")");
 	$row = edb_row($rankresult);
 	$rankedPapers = $row ? $row[0] : 0;
-	if ($myrow && $myrow[2] > 1)
+	if ($myrow)
 	    echo "You have <a href='" . hoturl("ranks") . "'>ranked</a> $rankedPapers papers<br />\n";
 	$tag_rank = "~" . $Conf->settingText("tag_rank");
 	$tag_length = strlen($tag_rank);
