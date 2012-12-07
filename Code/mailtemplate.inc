@@ -389,14 +389,14 @@ Contact the site administrator, %ADMIN%, with any questions or concerns.
      array("mailtool_name" => "Ranking reminder",
 	   "mailtool_priority" => 22,
 	   "mailtool_recipients" => "unrankpc",
-	   "subject" => "[%CONFSHORTNAME%] Ranking reminder for paper #%NUMBER% %TITLEHINT%",
+	   "subject" => "[%CONFSHORTNAME%] Reminder to rank your assigned papers",
 	   "body" => "Dear %NAME%,
 
-This is a reminder to rank paper #%NUMBER% for %CONFNAME% . %IF(REVIEWDEADLINE)% Rankings are requested by %REVIEWDEADLINE%. %ENDIF%
+This is a reminder to rank your assigned papers for %CONFNAME%. %IF(REVIEWDEADLINE)% Rankings are requested by %REVIEWDEADLINE%. %ENDIF%
 
-       Title: %TITLE%
-     Authors: %OPT(AUTHORS)%
-  Paper site: %URL(paper, p=%NUMBER%)%
+             Site: %URL%/
+     Your reviews: %URL(search, q=re:me)%
+  Unranked papers: %UNRANKEDASSIGNMENTS%
 
 Use the link below to rank your asigned papers.
 
