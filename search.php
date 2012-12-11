@@ -322,6 +322,8 @@ function tagaction() {
 		$r->irv();
 	    else if ($method == "range")
 		$r->rangevote();
+	    else if ($method == "randwalk")
+		$r->randwalk();
 	    else if ($method == "civs")
 		$r->civsrp();
 	    else
