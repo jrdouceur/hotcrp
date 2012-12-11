@@ -229,11 +229,49 @@ class PaperRank {
 	}
     }
 
+
     // global rank calculation by computing the stationary distribution of a random walk
     function randwalk() {
-	global $Conf;
-	$Conf->infoMsg("Walking randomly");
+
+	// extract pairwise comparisons from user rankings into $compareCounts sparse 2D array
+	$paperCount = count($this->papersel);
+	$compareCounts = array_combine($this->papersel, array_fill(0, $paperCount, array()));
+	foreach ($this->userrank as $user => &$rankedPapers) {
+	    $numUserRanks = count($rankedPapers);
+	    for ($higherRank = 0; $higherRank < $numUserRanks - 1; $higherRank++) {
+		$higherRankedPaperId = $rankedPapers[$higherRank][1];
+		for ($lowerRank = $higherRank + 1; $lowerRank < $numUserRanks; $lowerRank++) {
+		    $lowerRankedPaperId = $rankedPapers[$lowerRank][1];
+		    // if needed, create elements in sparse array
+		    if (!array_key_exists($lowerRankedPaperId, $compareCounts[$higherRankedPaperId])
+			$compareCounts[$higherRankedPaperId][$lowerRankedPaperId] = array(0, 0);
+		    if (!array_key_exists($higherRankedPaperId, $compareCounts[$lowerRankedPaperId])
+			$compareCounts[$lowerRankedPaperId][$higherRankedPaperId] = array(0, 0);
+		    // increment counts, stored redundantly for faster access in later code
+		    $compareCounts[$higherRankedPaperId][$lowerRankedPaperId][0]++;
+		    $compareCounts[$lowerRankedPaperId][$higherRankedPaperId][1]++;
+		}
+	    }
+	}
+
+	// calculate the maximum number of papers outranking any paper
+	$maxOutrankCount = 0;
+	foreach ($compareCounts as $rowPaperId => $compareCountRow) {
+	    $rowOutrankCount = 0;
+	    foreach ($compareCountRow as $colPaperId => $compareCount)
+		$rowOutrankCount += $compareCount[1];
+	    if ($rowOutrankCount > $maxOutrankCount)
+		$maxOutrankCount = $rowOutrankCount;
+	}
+
+	// build (transposed) transition probability matrix
+	
+
+	// initialize distribution
+	// iterate until distribution stabilizes
+	// extract ranks from stationary distribution
     }
+
 
     function _calculatePrefs() {
 	$this->anypref = array_combine($this->papersel, array_fill(0, count($this->papersel), 0));
