@@ -231,6 +231,8 @@ class PaperRank {
 
     // global rank calculation by computing the stationary distribution of a random walk
     function randwalk() {
+	global $Conf;
+	$Conf->infoMsg("Walking randomly");
     }
 
     function _calculatePrefs() {
