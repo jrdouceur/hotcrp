@@ -268,8 +268,6 @@ class PaperRank {
 	foreach ($compareCounts as $rowPaperId => $compareCountRow) {
 	    $rowSum = 0.0;
 	    foreach ($compareCountRow as $colPaperId => $colBeatRow) {
-	    {
-		$rowBeatCol = $compareCounts[$colPaperId][$rowPaperId];
 		$transitionProb = ($colBeatRow + 1.0) / (($colBeatRow + $rowBeatCol + 2.0) * $maxOutrankCount);
 		$transitionMatrix[$colPaperId][$rowPaperId] = $transitionProb; // transposed row and col indices
 		$rowSum += $transitionProb;
