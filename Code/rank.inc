@@ -243,9 +243,9 @@ class PaperRank {
 		for ($lowerRank = $higherRank + 1; $lowerRank < $numUserRanks; $lowerRank++) {
 		    $lowerRankedPaperId = $rankedPapers[$lowerRank][1];
 		    // if needed, create elements in sparse array
-		    if (!array_key_exists($lowerRankedPaperId, $compareCounts[$higherRankedPaperId])
+		    if (!array_key_exists($lowerRankedPaperId, $compareCounts[$higherRankedPaperId]))
 			$compareCounts[$higherRankedPaperId][$lowerRankedPaperId] = 0;
-		    if (!array_key_exists($higherRankedPaperId, $compareCounts[$lowerRankedPaperId])
+		    if (!array_key_exists($higherRankedPaperId, $compareCounts[$lowerRankedPaperId]))
 			$compareCounts[$lowerRankedPaperId][$higherRankedPaperId] = 0;
 		    $compareCounts[$lowerRankedPaperId][$higherRankedPaperId]++;
 		}
