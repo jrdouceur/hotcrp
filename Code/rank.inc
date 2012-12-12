@@ -232,9 +232,9 @@ class PaperRank {
 
     // global rank calculation by computing the stationary distribution of a random walk
     function randwalk() {
-
-	// extract pairwise comparisons from user rankings into $compareCounts sparse 2D array
 	$paperCount = count($this->papersel);
+
+	// extract pairwise comparisons from user rankings into sparse 2D array
 	$compareCounts = array_combine($this->papersel, array_fill(0, $paperCount, array()));
 	foreach ($this->userrank as $user => &$rankedPapers) {
 	    $numUserRanks = count($rankedPapers);
@@ -244,12 +244,10 @@ class PaperRank {
 		    $lowerRankedPaperId = $rankedPapers[$lowerRank][1];
 		    // if needed, create elements in sparse array
 		    if (!array_key_exists($lowerRankedPaperId, $compareCounts[$higherRankedPaperId])
-			$compareCounts[$higherRankedPaperId][$lowerRankedPaperId] = array(0, 0);
+			$compareCounts[$higherRankedPaperId][$lowerRankedPaperId] = 0;
 		    if (!array_key_exists($higherRankedPaperId, $compareCounts[$lowerRankedPaperId])
-			$compareCounts[$lowerRankedPaperId][$higherRankedPaperId] = array(0, 0);
-		    // increment counts, stored redundantly for faster access in later code
-		    $compareCounts[$higherRankedPaperId][$lowerRankedPaperId][0]++;
-		    $compareCounts[$lowerRankedPaperId][$higherRankedPaperId][1]++;
+			$compareCounts[$lowerRankedPaperId][$higherRankedPaperId] = 0;
+		    $compareCounts[$lowerRankedPaperId][$higherRankedPaperId]++;
 		}
 	    }
 	}
@@ -259,17 +257,47 @@ class PaperRank {
 	foreach ($compareCounts as $rowPaperId => $compareCountRow) {
 	    $rowOutrankCount = 0;
 	    foreach ($compareCountRow as $colPaperId => $compareCount)
-		$rowOutrankCount += $compareCount[1];
+		if ($compareCount > 0)
+		    $rowOutrankCount++;
 	    if ($rowOutrankCount > $maxOutrankCount)
 		$maxOutrankCount = $rowOutrankCount;
 	}
 
-	// build (transposed) transition probability matrix
-	
+	// build sparse transition probability matrix (this is the transpose of the conventional representation)
+	$transitionMatrix = array_combine($this->papersel, array_fill(0, $paperCount, array()));
+	foreach ($compareCounts as $rowPaperId => $compareCountRow) {
+	    $rowSum = 0.0;
+	    foreach ($compareCountRow as $colPaperId => $colBeatRow) {
+	    {
+		$rowBeatCol = $compareCounts[$colPaperId][$rowPaperId];
+		$transitionProb = ($colBeatRow + 1.0) / (($colBeatRow + $rowBeatCol + 2.0) * $maxOutrankCount);
+		$transitionMatrix[$colPaperId][$rowPaperId] = $transitionProb; // transposed row and col indices
+		$rowSum += $transitionProb;
+	    }
+	    $transitionMatrix[$rowPaperId][$rowPaperId] = 1.0 - $rowSum;
+	}
 
-	// initialize distribution
+	// initialize distribution to equiprobable state
+	$stateDist = array_combine($this->papersel, array_fill(0, $paperCount, 1.0/$paperCount));
+
 	// iterate until distribution stabilizes
+	// BUGBUG: right now, this is just a fixed count of iterations - need a better termination condition
+	for ($iters = 0; iters < 100; iters++) {
+	    $newStateDist = array();
+	    foreach ($transitionMatrix as $toPaperId => $transitionVector) {
+		$newStateProb = 0.0;
+		foreach ($transitionVector as $fromPaperId => $transitionProb)
+		    $newStateProb += $stateDist[fromPaperId] * $transitionProb;
+		$newStateDist[toPaperId] = newStateProb;
+	    }
+	    $stateDist =& $newStateDist;
+	    unset($newStateDist);  // gotta love PHP; if we don't do this the initialization of $newStateDist will clobber $stateDist
+	}
+
 	// extract ranks from stationary distribution
+	arsort($stateDist);
+	foreach ($stateDist as $paperId => $prob)
+	    $this->rank[$paperId] = $this->_nextRank();
     }
 
 
