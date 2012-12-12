@@ -277,12 +277,17 @@ class PaperRank {
 	    $transitionMatrix[$rowPaperId][$rowPaperId] = 1.0 - $rowSum;
 	}
 
+	// convergence threshold for iteration is 1/$paperCount^3
+	$paperCountInv = 1.0/$paperCount;
+	$convergeThresh = $paperCountInv * $paperCountInv * $paperCountInv;
+
 	// initialize distribution to equiprobable state
-	$stateDist = array_combine($this->papersel, array_fill(0, $paperCount, 1.0/$paperCount));
+	$stateDist = array_combine($this->papersel, array_fill(0, $paperCount, $paperCountInv));
 
 	// iterate until distribution stabilizes
-	// BUGBUG: right now, this is just a fixed count of iterations - need a better termination condition
-	for ($iters = 0; iters < 100; iters++) {
+	$converged = false;
+	while (!converged) {
+	    // compute new state as product of state vector and transition matrix
 	    $newStateDist = array();
 	    foreach ($transitionMatrix as $toPaperId => $transitionVector) {
 		$newStateProb = 0.0;
@@ -290,6 +295,21 @@ class PaperRank {
 		    $newStateProb += $stateDist[fromPaperId] * $transitionProb;
 		$newStateDist[toPaperId] = newStateProb;
 	    }
+
+	    // compute L2 norm between new state and old state
+	    $probDiff2Sum = 0.0;
+	    foreach ($stateDist as $paperId => $oldProb) {
+		$newProb = $newStateDist[$paperId];
+		$probDiff = $newProb - $oldProb;
+		$probDiff2 = $probDiff * $probDiff;
+		$probDiff2Sum += $probDiff2;
+	    }
+	    $l2norm = sqrt($probDiff2Sum);
+
+	    // assess convergence
+	    $converged = $l2norm < $convergeThresh;
+
+	    // set new state as old state, using reference to avoid expensive copy
 	    $stateDist =& $newStateDist;
 	    unset($newStateDist);  // gotta love PHP; if we don't do this the initialization of $newStateDist will clobber $stateDist
 	}
