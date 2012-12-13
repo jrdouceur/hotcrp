@@ -268,6 +268,7 @@ class PaperRank {
 	foreach ($compareCounts as $rowPaperId => $compareCountRow) {
 	    $rowSum = 0.0;
 	    foreach ($compareCountRow as $colPaperId => $colBeatRow) {
+		$rowBeatCol = $compareCounts[$colPaperId][$rowPaperId];
 		$transitionProb = ($colBeatRow + 1.0) / (($colBeatRow + $rowBeatCol + 2.0) * $maxOutrankCount);
 		$transitionMatrix[$colPaperId][$rowPaperId] = $transitionProb; // transposed row and col indices
 		$rowSum += $transitionProb;
@@ -284,14 +285,14 @@ class PaperRank {
 
 	// iterate until distribution stabilizes
 	$converged = false;
-	while (!converged) {
+	while (!$converged) {
 	    // compute new state as product of state vector and transition matrix
 	    $newStateDist = array();
 	    foreach ($transitionMatrix as $toPaperId => $transitionVector) {
 		$newStateProb = 0.0;
 		foreach ($transitionVector as $fromPaperId => $transitionProb)
-		    $newStateProb += $stateDist[fromPaperId] * $transitionProb;
-		$newStateDist[toPaperId] = newStateProb;
+		    $newStateProb += $stateDist[$fromPaperId] * $transitionProb;
+		$newStateDist[$toPaperId] = $newStateProb;
 	    }
 
 	    // compute L2 norm between new state and old state
