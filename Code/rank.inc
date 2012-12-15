@@ -233,6 +233,8 @@ class PaperRank {
     // global rank calculation by computing the stationary distribution of a random walk
     function randwalk() {
 	$paperCount = count($this->papersel);
+	if (!count($this->papersel))
+	    return;
 
 	// extract pairwise comparisons from user rankings into sparse 2D array
 	$compareCounts = array_combine($this->papersel, array_fill(0, $paperCount, array()));
@@ -276,12 +278,11 @@ class PaperRank {
 	    $transitionMatrix[$rowPaperId][$rowPaperId] = 1.0 - $rowSum;
 	}
 
-	// convergence threshold for iteration is 1/$paperCount^3
-	$paperCountInv = 1.0/$paperCount;
-	$convergeThresh = $paperCountInv * $paperCountInv * $paperCountInv;
+	// empirically determined formula for iteration convergence threshold
+	$convergeThresh = exp(240.0/$paperCount - 25.0);
 
 	// initialize distribution to equiprobable state
-	$stateDist = array_combine($this->papersel, array_fill(0, $paperCount, $paperCountInv));
+	$stateDist = array_combine($this->papersel, array_fill(0, $paperCount, 1.0/$paperCount));
 
 	// iterate until distribution stabilizes
 	$converged = false;
