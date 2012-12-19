@@ -278,11 +278,13 @@ class PaperRank {
 	    $transitionMatrix[$rowPaperId][$rowPaperId] = 1.0 - $rowSum;
 	}
 
-	// empirically determined formula for iteration convergence threshold
-	$convergeThresh = exp(240.0/$paperCount - 25.0);
+	// iteration convergence threshold is inverse cubic in count of papers
+	// offset factor of 1000 captures 99.9% of convergences (determined empirically)
+	$invPaperCount = 1.0/$paperCount;
+	$convergeThresh = 0.001 * $invPaperCount * $invPaperCount * $invPaperCount;
 
 	// initialize distribution to equiprobable state
-	$stateDist = array_combine($this->papersel, array_fill(0, $paperCount, 1.0/$paperCount));
+	$stateDist = array_combine($this->papersel, array_fill(0, $paperCount, $invPaperCount));
 
 	// iterate until distribution stabilizes
 	$converged = false;
