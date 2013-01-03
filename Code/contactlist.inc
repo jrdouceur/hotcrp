@@ -554,7 +554,14 @@ class ContactList extends BaseList {
 	if (isset($queryOptions['ranks'])) {
 	    $tag_rank = "~" . $Conf->settingText("tag_rank");
 	    $tag_length = strlen($tag_rank);
-	    $pq .= "	left join (select left(tag,length(tag)-$tag_length)+0 as contactId, count(tagIndex) as numRanksSubmitted from PaperTag where right(tag,$tag_length)=\"$tag_rank\" group by contactId) as PaperRank on (PaperRank.contactId=ContactInfo.contactId)\n";
+	    $subq = "select left(tag,length(tag)-$tag_length)+0 as tagContactId, count(tagIndex) as numRanksSubmitted from PaperTag";
+	    if (!$this->contact->privChair)
+		$subq .= " left join PaperConflict on (PaperConflict.paperId=PaperTag.paperId and PaperConflict.contactId=" . $this->contact->contactId . ")";
+	    $subq .= " where right(tag,$tag_length)=\"$tag_rank\"";
+	    if (!$this->contact->privChair)
+		$subq .= " and (conflictType is null or conflictType=0)";
+	    $subq .= " group by tagContactId";
+	    $pq .= "	left join ($subq) as PaperRank on (PaperRank.tagContactId=ContactInfo.contactId)\n";
 	}
 	if (isset($queryOptions["leads"])) {
 	    $pq .= "	left join (select leadContactId, group_concat(Paper.paperId) as leadPaperIds, count(Paper.paperId) as numLeads from Paper";
