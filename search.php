@@ -310,7 +310,7 @@ function tagaction() {
     else if (count($papers) && $act == "cr" && $Me->privChair) {
 	$source_tag = trim(defval($_REQUEST, "tagcr_source", ""));
 	$source_tag = ($source_tag == "" ? $tag : $source_tag);
-        if ($tagger->check($tag, Tagger::NOVALUE | Tagger::NOPRIVATE)
+        if ($tagger->check($tag, Tagger::NOVALUE | Tagger::NOUSERPRIVATE)
             && $tagger->check($source_tag, Tagger::NOVALUE | Tagger::NOPRIVATE)) {
 	    require_once("Code/rank.inc");
 	    ini_set("max_execution_time", 1200);
