@@ -557,7 +557,7 @@ class ContactList extends BaseList {
 	    $subq = "select left(tag,length(tag)-$tag_length)+0 as tagContactId, count(tagIndex) as numRanksSubmitted from PaperTag";
 	    if (!$this->contact->privChair)
 		$subq .= " left join PaperConflict on (PaperConflict.paperId=PaperTag.paperId and PaperConflict.contactId=" . $this->contact->contactId . ")";
-	    $subq .= " where right(tag,$tag_length)=\"$tag_rank\"";
+	    $subq .= " where right(tag,$tag_length)='$tag_rank' and left(tag,1)!='~'";
 	    if (!$this->contact->privChair)
 		$subq .= " and (conflictType is null or conflictType=0)";
 	    $subq .= " group by tagContactId";

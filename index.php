@@ -583,7 +583,7 @@ if ($Me->amReviewer() && ($Me->privChair || $papersub)) {
 	    echo "You have <a href='" . hoturl("ranks") . "'>ranked</a> $rankedPapers papers<br />\n";
 	$tag_rank = "~" . $Conf->settingText("tag_rank");
 	$tag_length = strlen($tag_rank);
-	$rankresult = $Conf->qe("select count(*) from PaperTag where (right(PaperTag.tag,$tag_length)=\"$tag_rank\")");
+	$rankresult = $Conf->qe("select count(*) from PaperTag where right(PaperTag.tag,$tag_length)='$tag_rank' and left(PaperTag.tag,1)!='~'");
 	$row = edb_row($rankresult);
 	echo sprintf("  The average PC member has ranked %.1f papers<br />\n", $row[0] / $npc);
     }
