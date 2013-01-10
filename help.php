@@ -243,10 +243,11 @@ function searchQuickref() {
     _searchQuickrefRow("", "-#discuss", "not tagged “discuss”");
     _searchQuickrefRow("", "order:discuss", "tagged “discuss”, sort by tag order (“rorder:” for reverse order)");
     _searchQuickrefRow("", "#disc*", "matches any tag that <em>starts with</em> “disc”");
-    if ($Me->privChair) {
+    if ($Me->privChair)
 	_searchQuickrefRow("", "compare:~rank<5", "some reviewer’s “~rank” tag value is less than that reviewer’s “~rank” tag value for paper 5");
 	_searchQuickrefRow("", "pccompare:\"~vote=2 5-7\"", "some PC member’s “~vote” tag value equals that member’s “~vote” tag value for paper 2, 5, 6, or 7");
     }
+    _searchQuickrefRow("Reviews", "re:fdabek", "“fdabek” in reviewer name/email");
     if ($retag) {
 	_searchQuickrefRow("", "re:$retag", "has a reviewer tagged “" . $retag . "”");
 	_searchQuickrefRow("", "re:\"$retag\"", "“" . $retag . "” in reviewer name/email");
