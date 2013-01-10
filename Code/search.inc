@@ -30,6 +30,7 @@ $searchKeywords = array("ti" => "ti", "title" => "ti",
 	"rord" => "rorder", "rorder" => "rorder",
 	"revord" => "rorder", "revorder" => "rorder",
 	"comp" => "compare", "compare" => "compare",
+	"pccomp" => "pccompare", "pccompare" => "pccompare",
 	"decision" => "decision", "dec" => "decision",
 	"topic" => "topic",
 	"option" => "option", "opt" => "option",
@@ -920,19 +921,19 @@ class PaperSearch {
 	global $Conf;
 	require_once("tags.inc");
 
-	// identify private tag, comparator, and list of paper numbers in search word
+	// regular expressions for private tag, comparator, and list of paper numbers in search word
 	$regex_privateTag = "~[a-zA-Z!@_:.][-a-zA-Z0-9!@_:.\/]*";
 	$regex_comparator = "[<>!=]=?";
 	$regex_number = "#?(\d+)";
 	$regex_range = "$regex_number-$regex_number";
-	$regex_numOrRange = "(?:$regex_number()|$regex_range)";
+	$regex_notRange = "(?=[\s,]|\z)";
+	$regex_numOrRange = "(?:$regex_number$regex_notRange|$regex_range)";
 	$regex_separator = "\s*[\s,]\s*";
 	$regex_list = "$regex_numOrRange(?:$regex_separator$regex_numOrRange)*";
-	$match_success = preg_match("/\A\s*($regex_privateTag)($regex_comparator)\"?\s*$regex_list\s*\"?\z/", $word, $m);
 
-	// fail if format incorrect
-	if (!$match_success) {
-	    $this->warn("The <code>compare</code> keyword expects a private tag, a comparison operator, and a list of paper numbers.");
+	// match regular expression to search word; fail if no match
+	if (!preg_match("/\A\s*($regex_privateTag)($regex_comparator)\s*($regex_list)\s*\z/", $word, $m)) {
+	    $this->warn("The <code>$keyword</code> keyword expects a private tag, a comparison operator, and a list of paper numbers.");
 	    $qt[] = new SearchTerm("f");
 	    return;
 	}
@@ -940,18 +941,22 @@ class PaperSearch {
 	// extract private tag, comparator, and list of paper numbers
 	$privateTag = $m[1];
 	$comparator = self::_cleanCompar($m[2]);
+	$paperNumList = $m[3];
+
 	$paperNums = array();
-	for ($index = 3; $index < count($m); $index += 2) {
-	    $paperNumStart = $m[index]+0;
-	    $paperNumEnd = $m[index+1] == "" ? $paperNumStart : $m[index+1]+0;
-	    $paperNums = array_merge($paperNums, range($paperNumStart, $paperNumEnd));
+	while (preg_match("/\A$regex_numOrRange(?:$regex_separator(.*))?\z/", $paperNumList, $m)) {
+	    if (is_numeric($m[1]))
+		$paperNums[] = $m[1];
+	    else
+		$paperNums = array_merge($paperNums, range($m[2], $m[3]));
+	    $paperNumList = $m[4];
 	}
 
 	// find reviewer tags and corresponding tag indices for all papers in list
 	$privateTag_length = strlen($privateTag);
 	$tagQuery = "select tag, tagIndex";
 	if ($keyword == "pccompare")
-	    $tagQuery = ", left(tag,length(tag)-$privateTag_length)+0 as tagContactId, contactId";
+	    $tagQuery .= ", left(tag,length(tag)-$privateTag_length)+0 as tagContactId, contactId";
 	$tagQuery .= " from PaperTag";
 	if ($keyword == "pccompare")
 	    $tagQuery .= " join PCMember";
