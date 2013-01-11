@@ -934,7 +934,7 @@ class PaperSearch {
 
 	// match regular expression to search word; fail if no match
 	if (!preg_match("/\A\s*($regex_privateTag)($regex_offset)*($regex_comparator)\s*($regex_list)\s*\z/", $word, $m)) {
-	    $this->warn("The <code>$keyword</code> keyword expects a private tag, a comparison operator, and a list of paper numbers.");
+	    $this->warn("The <code>$keyword</code> keyword expects a private tag, an optional +/-offset, a comparison operator, and a list of paper numbers. See <a href='" . hoturl("help", "t=keywords") . "'>search keywords help</a>");
 	    $qt[] = new SearchTerm("f");
 	    return;
 	}

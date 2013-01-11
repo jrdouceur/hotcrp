@@ -244,7 +244,7 @@ function searchQuickref() {
     _searchQuickrefRow("", "order:discuss", "tagged “discuss”, sort by tag order (“rorder:” for reverse order)");
     _searchQuickrefRow("", "#disc*", "matches any tag that <em>starts with</em> “disc”");
     if ($Me->privChair) {
-	_searchQuickrefRow("", "compare:~rank<5", "some reviewer’s “~rank” tag value is less than that reviewer’s “~rank” tag value for paper 5");
+	_searchQuickrefRow("", "compare:~rank+3<5", "some reviewer’s “~rank” tag value plus 3 is less than the same reviewer’s “~rank” tag value for paper 5");
 	_searchQuickrefRow("", "pccompare:\"~vote=2 5-7\"", "some PC member’s “~vote” tag value equals that member’s “~vote” tag value for paper 2, 5, 6, or 7");
     }
     _searchQuickrefRow("Reviews", "re:fdabek", "“fdabek” in reviewer name/email");
