@@ -967,11 +967,19 @@ class PaperSearch {
 	    $tagQuery .= " having (tagContactId=PCMember.contactId)";
 	$result = $Conf->qe($tagQuery, "while evaluating $keyword keyword");
 
-	// add a new search term for each reviewer tag and index value to compare against
+	// find papers that satisfy requested comparison
+	$tagWhere = array();
 	while ($row = edb_row($result)) {
 	    $comparand = $row[1] - $offset;
-	    $qt[] = new SearchTerm("tag", 0, array($row[0], $comparator . $comparand));
+	    $tagWhere[] = "tag='$row[0]' and tagIndex $comparator $comparand";
 	}
+	$result = $Conf->qe("select distinct paperId from PaperTag where " . join(" or ", $tagWhere), "while evaluating $keyword keyword");
+
+	// add a new search term for identified paper numbers
+	$paperNums = array();
+	while ($row = edb_row($result))
+	    $paperNums[] = $row[0];
+	$qt[] = new SearchTerm("pn", 0, array($paperNums, array()));
     }
 
     function _searchOptions($word, &$qt, $error) {
