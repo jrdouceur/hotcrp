@@ -831,13 +831,28 @@ if (isset($_REQUEST["setassign"]) && defval($_REQUEST, "marktype", "") != ""
 }
 
 
-// mark conflicts/PC-authored papers
+// send mail for selected papers
 if (isset($_REQUEST["sendmail"]) && isset($papersel)) {
     if (!$Me->privChair)
 	$Conf->errorMsg("Only the PC chairs can send mail.");
     else {
 	$r = (in_array($_REQUEST["recipients"], array("au", "rev")) ? $_REQUEST["recipients"] : "all");
 	$Me->go(hoturl("mail", "p=" . join($papersel, "+") . "&recipients=$r"));
+    }
+}
+
+
+// search papers according to private tag comparison
+if (isset($_REQUEST["compare"]) && isset($papersel)) {
+    if (!$Me->privChair)
+	$Conf->errorMsg("Only the PC chairs can perform private tag comparisons.");
+    else {
+	$keyword = $_REQUEST["comparetype"];
+	$tag = "~" . $_REQUEST["comparetag"];
+	$offset = intval($_REQUEST["compareoffset"]);
+	$signedOffset = $offset < 0 ? strval($offset) : "%2B" . $offset;
+	$comparator = $_REQUEST["comparator"];
+	$Me->go(hoturl("search", "q=$keyword:\"$tag$signedOffset$comparator" . join($papersel, "+") . "\"&t=". $_REQUEST["t"]));
     }
 }
 
