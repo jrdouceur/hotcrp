@@ -399,11 +399,12 @@ class PaperList extends BaseList {
 	    }
 	    $t .= "tag<span class='fn99'>(s)</span> &nbsp;<input id='plact${nlll}_d' class='textlite' type='text' name='tag' value=\"" . htmlspecialchars(defval($_REQUEST, "tag", "")) . "\"' size='15' onfocus='autosub(\"tagact\",this)' /> &nbsp;<input type='submit' class='b' name='tagact' value='Go' />";
 	    if ($this->contact->privChair) {
+		require_once("Code/rank.inc");
 		$t .= "<div class='fx'><div style='margin:2px 0'>"
 		    . tagg_checkbox("tagcr_gapless", 1, defval($_REQUEST, "tagcr_gapless"), array("style" => "margin-left:0"))
 		    . "&nbsp;" . tagg_label("Gapless order") . "</div>"
 		    . "<div style='margin:2px 0'>Using: &nbsp;"
-		    . tagg_select("tagcr_method", array("schulze" => "Schulze method", "irv" => "Instant-runoff voting", "range" => "Range voting", "civs" => "CIVS Ranked Pairs", "randwalk" => "Random walk"), defval($_REQUEST, "tagcr_method"))
+		    . tagg_select("tagcr_method", PaperRank::rankMethods(), defval($_REQUEST, "tagcr_method", $Conf->setting("rank_alg")))
 		    . "</div>"
 		    . "<div style='margin:2px 0'>Source tag: &nbsp;~<input class='textlite' type='text' name='tagcr_source' value=\"" . htmlspecialchars(defval($_REQUEST, "tagcr_source", "")) . "\" size='15' /></div>"
 		    . "</div>";

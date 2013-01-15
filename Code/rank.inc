@@ -24,6 +24,15 @@ class PaperRank {
     var $header_id;
     var $starttime;
 
+    static function rankMethods() {
+	return array(
+	    "schulze" => "Schulze method",
+	    "irv" => "Instant-runoff voting",
+	    "range" => "Range voting",
+	    "civs" => "CIVS Ranked Pairs",
+	    "randwalk" => "Random walk");
+    }
+
     function __construct($source_tag, $dest_tag, $papersel, $strict,
 			 $header_title = null, $header_id = null) {
 	global $Conf;

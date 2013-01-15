@@ -59,6 +59,7 @@ $SettingGroups = array("acc" => array(
 			     "x_tag_chair" => "special",
 			     "x_tag_vote" => "special",
 			     "x_tag_rank" => "special",
+			     "x_rank_alg" => "special",
 			     "x_tag_color" => "special",
 			     "tag_seeall" => "check",
 			     "extrev_soft" => "date",
@@ -127,6 +128,7 @@ $SettingText = array(
 	"tag_chair" => "Chair tags",
 	"tag_vote" => "Voting tags",
 	"tag_rank" => "Rank tag",
+	"rank_alg" => "Default ranking algorithm",
 	"tag_color" => "Tag colors",
 	"tag_seeall" => "PC can see tags for conflicted papers",
 	"rev_ratings" => "Review ratings setting",
@@ -352,6 +354,11 @@ function doTags($set, $what) {
 	    && ($Conf->setting("tag_rank") !== $v[0]
 		|| $Conf->settingText("tag_rank") !== $v[1]))
 	    $Values["tag_rank"] = $v;
+    }
+
+    if (!$set && $what == "rank_alg" && isset($_REQUEST["rank_alg"])) {
+	if (!$Conf->setting("rank_alg") || $Conf->settingText("rank_alg") !== $_REQUEST["rank_alg"])
+	    $Values["rank_alg"] = $_REQUEST["rank_alg"];
     }
 
     if (!$set && $what == "tag_color") {
@@ -794,7 +801,8 @@ function doBanal($set) {
 function doSpecial($name, $set) {
     global $Values, $Error, $Highlight;
     if ($name == "x_tag_chair" || $name == "x_tag_vote"
-	|| $name == "x_tag_rank" || $name == "x_tag_color")
+	|| $name == "x_tag_rank" || $name == "x_rank_alg"
+	|| $name == "x_tag_color")
 	doTags($set, substr($name, 2));
     else if ($name == "topics")
 	doTopics($set);
@@ -1537,7 +1545,16 @@ function doRevGroup() {
 	$v = defval($_REQUEST, "tag_rank", "");
     else
 	$v = $Conf->settingText("tag_rank", "");
-    echo "<td><input type='text' class='textlite' name='tag_rank' value=\"", htmlspecialchars($v), "\" size='40' onchange='hiliter(this)' /><br /><div class='hint'>If set, the <a href='", hoturl("offline"), "'>offline reviewing</a> and <a href='", hoturl("ranks"), "'>ranking</a> pages will expose support for uploading rankings by this tag. &nbsp;<span class='barsep'>|</span>&nbsp; <a href='", hoturl("help", "t=ranking"), "'>What is this?</a></div></td></tr>";
+    echo "<td><input type='text' class='textlite' name='tag_rank' value=\"", htmlspecialchars($v), "\" size='40' onchange='hiliter(this)' /><br /><div class='hint'>If set, the <a href='", hoturl("offline"), "'>offline reviewing</a> and <a href='", hoturl("ranks"), "'>ranking</a> pages will expose support for setting rankings by this tag. &nbsp;<span class='barsep'>|</span>&nbsp; <a href='", hoturl("help", "t=ranking"), "'>What is this?</a></div></td></tr>";
+
+    echo "<tr><td class='lcaption'>", decorateSettingName("rank_alg", "Default ranking algorithm:"), "</td>";
+    if (count($Error) > 0)
+	$v = defval($_REQUEST, "rank_alg", "");
+    else
+	$v = $Conf->settingText("rank_alg", "");
+    require_once("Code/rank.inc");
+    echo "<td>", tagg_select("rank_alg", PaperRank::rankMethods(), $v, array("onchange" => "hiliter(this)")), "<br /><div class='hint'>The default algorithm for computing global ranks from individual reviewer ranks.</div></td></tr>";
+
     echo "</table>";
 
     echo "<div class='g'></div>\n";
