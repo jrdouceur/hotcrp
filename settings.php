@@ -358,7 +358,7 @@ function doTags($set, $what) {
 
     if (!$set && $what == "rank_alg" && isset($_REQUEST["rank_alg"])) {
 	if (!$Conf->setting("rank_alg") || $Conf->settingText("rank_alg") !== $_REQUEST["rank_alg"])
-	    $Values["rank_alg"] = $_REQUEST["rank_alg"];
+	    $Values["rank_alg"] = array(1, $_REQUEST["rank_alg"]);
     }
 
     if (!$set && $what == "tag_color") {
