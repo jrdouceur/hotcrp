@@ -30,7 +30,6 @@ $searchKeywords = array("ti" => "ti", "title" => "ti",
 	"rord" => "rorder", "rorder" => "rorder",
 	"revord" => "rorder", "revorder" => "rorder",
 	"comp" => "compare", "compare" => "compare",
-	"pccomp" => "pccompare", "pccompare" => "pccompare",
 	"decision" => "decision", "dec" => "decision",
 	"topic" => "topic",
 	"option" => "option", "opt" => "option",
@@ -956,15 +955,7 @@ class PaperSearch {
 
 	// find reviewer tags and corresponding tag indices for all papers in list
 	$privateTag_length = strlen($privateTag);
-	$tagQuery = "select tag, tagIndex";
-	if ($keyword == "pccompare")
-	    $tagQuery .= ", left(tag,length(tag)-$privateTag_length)+0 as tagContactId, contactId";
-	$tagQuery .= " from PaperTag";
-	if ($keyword == "pccompare")
-	    $tagQuery .= " join PCMember";
-	$tagQuery .= " where right(tag,$privateTag_length)='$privateTag' and left(tag,1)!='~' and paperId in (" . join(", ", $paperNums) . ")";
-	if ($keyword == "pccompare")
-	    $tagQuery .= " having (tagContactId=PCMember.contactId)";
+	$tagQuery = "select tag, tagIndex from PaperTag where right(tag,$privateTag_length)='$privateTag' and left(tag,1)!='~' and paperId in (" . join(", ", $paperNums) . ")";
 	$result = $Conf->qe($tagQuery, "while evaluating $keyword keyword");
 
 	// find papers that satisfy requested comparison
@@ -1161,8 +1152,8 @@ class PaperSearch {
 	if (($keyword ? $keyword == "tag" : isset($this->fields["tag"]))
 	    || $keyword == "order" || $keyword == "rorder")
 	    $this->_searchTags($word, $keyword, $qt);
-	if ((($keyword ? $keyword == "compare" : isset($this->fields["compare"]))
-	    || $keyword == "pccompare") && $this->privChair)
+	if (($keyword ? $keyword == "compare" : isset($this->fields["compare"]))
+		&& $this->privChair)
 	    $this->_searchCompareTags($word, $keyword, $qt);
 	if (($keyword ? $keyword == "topic" : isset($this->fields["topic"]))) {
 	    $type = "topic";

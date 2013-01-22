@@ -847,12 +847,11 @@ if (isset($_REQUEST["compare"]) && isset($papersel)) {
     if (!$Me->privChair)
 	$Conf->errorMsg("Only the PC chairs can perform private tag comparisons.");
     else {
-	$keyword = $_REQUEST["comparetype"];
 	$tag = "~" . $_REQUEST["comparetag"];
 	$offset = intval($_REQUEST["compareoffset"]);
 	$signedOffset = $offset < 0 ? strval($offset) : "%2B" . $offset;
 	$comparator = $_REQUEST["comparator"];
-	$Me->go(hoturl("search", "q=$keyword:\"$tag$signedOffset$comparator" . join($papersel, "+") . "\"&t=". $_REQUEST["t"]));
+	$Me->go(hoturl("search", "q=compare:\"$tag$signedOffset$comparator" . join($papersel, "+") . "\"&t=". $_REQUEST["t"]));
     }
 }
 

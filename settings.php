@@ -1547,7 +1547,7 @@ function doRevGroup() {
 	$v = $Conf->settingText("tag_rank", "");
     echo "<td><input type='text' class='textlite' name='tag_rank' value=\"", htmlspecialchars($v), "\" size='40' onchange='hiliter(this)' /><br /><div class='hint'>If set, the <a href='", hoturl("offline"), "'>offline reviewing</a> and <a href='", hoturl("ranks"), "'>ranking</a> pages will expose support for setting rankings by this tag. &nbsp;<span class='barsep'>|</span>&nbsp; <a href='", hoturl("help", "t=ranking"), "'>What is this?</a></div></td></tr>";
 
-    echo "<tr><td class='lcaption'>", decorateSettingName("rank_alg", "Default ranking algorithm:"), "</td>";
+    echo "<tr><td class='lcaption'>", decorateSettingName("rank_alg", "Default rank method"), "</td>";
     if (count($Error) > 0)
 	$v = defval($_REQUEST, "rank_alg", "");
     else

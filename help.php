@@ -146,7 +146,7 @@ to navigate through the rest of the search matches.
 
 <p>Underneath the paper list is the action area:</p>
 
-<img src='" . hoturl_image("images/exsearchaction.png") . "' alt='[Search action area example]' /><br />
+<img src='" . hoturl_image("images/exsearchaction1.gif") . "' alt='[Search action area example]' /><br />
 
 <p>Use the checkboxes to select some papers, then choose an action.
 You can:</p>
@@ -160,6 +160,7 @@ You can:</p>
 <li>Assign reviewers and mark conflicts (chairs only).</li>
 <li>Set decisions (chairs only).</li>
 <li>Send mail to paper authors or reviewers (chairs only).</li>
+<li>Construct searches using the compare <a href='" . hoturl("help", "t=keywords") . "'>search keyword</a>.</li>
 </ul>
 
 <p>Select papers one by one, in groups by <em>shift</em>-clicking on either end
@@ -244,8 +245,8 @@ function searchQuickref() {
     _searchQuickrefRow("", "order:discuss", "tagged “discuss”, sort by tag order (“rorder:” for reverse order)");
     _searchQuickrefRow("", "#disc*", "matches any tag that <em>starts with</em> “disc”");
     if ($Me->privChair) {
-	_searchQuickrefRow("", "compare:~rank+3<5", "some reviewer’s “~rank” tag value plus 3 is less than the same reviewer’s “~rank” tag value for paper 5");
-	_searchQuickrefRow("", "pccompare:\"~vote=2 5-7\"", "some PC member’s “~vote” tag value equals that member’s “~vote” tag value for paper 2, 5, 6, or 7");
+	_searchQuickrefRow("", "compare:~rank+3<5", "some PC member’s “~rank” tag value plus 3 is less than the same member’s “~rank” tag value for paper 5");
+	_searchQuickrefRow("", "compare:\"~vote=2 5-7\"", "some PC member’s “~vote” tag value equals that member’s “~vote” tag value for paper 2, 5, 6, or 7");
     }
     _searchQuickrefRow("Reviews", "re:fdabek", "“fdabek” in reviewer name/email");
     if ($retag) {
@@ -727,23 +728,25 @@ function showranking() {
     echo "<table>";
     _alternateRow("Ranking basics", "
 Paper ranking is an alternate method to extract the PC’s preference order for
-submitted papers.  Each PC member ranks the submitted papers, and a voting
-algorithm, <a href='http://en.wikipedia.org/wiki/Schulze_method'>the Schulze
-method</a> by default, combines these rankings into a global preference order.
+submitted papers.  Each PC member ranks the submitted papers, and the chair uses
+a ranking algorithm to combine these individual reviewer rankings into a global
+rank order.
 
 <p>HotCRP supports ranking through the <a
-href='" . hoturl("help", "t=tags") . "'>tags system</a>.  The chair chooses
-a tag for ranking—“rank” is a good default—and enters it on <a
-href='" . hoturl("settings", "group=rev") . "'>the settings page</a>.
-PC members then rank papers using their private versions of this tag,
+href='" . hoturl("help", "t=tags") . "'>tags system</a>.  To enable ranking,
+the chair chooses a ranking tag—“rank” is a good default—and enters it on <a
+href='" . hoturl("settings", "group=rev") . "'>the settings page</a>.</p>");
+
+    _alternateRow("Setting individual ranks", "
+To indicate their relative preferences for papers, PC members rank papers
+using their private versions of the ranking tag,
 tagging their first preference with “~rank#1”,
 their second preference with “~rank#2”,
-and so forth.  To combine PC rankings into a global preference order, the PC
-chair selects all papers on the <a href='" . hoturl("search", "q=") . "'>search page</a>
-and chooses Tags &gt; Calculate&nbsp;rank, entering
-“rank” for the tag.  At that point, the global rank can be viewed
-by a <a href='" . hoturl("search", "q=order:rank") . "'>search for
-“order:rank”</a>.</p>
+and so forth.
+
+<p>PC members can view their own rankings by searching for “order:~rank”.
+Administrators can view a PC member's ranking by searching for
+“order:<i>pcname</i>~rank” to see a PC member’s ranking.</p>
 
 <p>PC members have three options for entering rankings. The most direct but
 least convenient option is to manipulate tags directly. A much more
@@ -751,9 +754,61 @@ convenient option is to use the <a href='" . hoturl("ranks") . "'>ranking</a>
 page, which provides an intuitive drag-and-drop interface for ordering
 papers by rank; however, this option is limited to strict sequential ranking
 &mdash; no gaps or equal ranks are permitted. The final option is to use the
-<a href='" . hoturl("offline") . "'>offline ranking form</a> to download a
-ranking file, rearrange the lines to create a ranking, and upload the file.
-For example, here is an initial ranking file:</p>
+<a href='" . hoturl("offline") . "'>offline ranking form</a> to download,
+modify, and upload a ranking file.  An example is shown at the bottom of this
+help page.</p>");
+
+    _alternateRow("Computing global ranks", "
+To combine PC rankings into a global preference order, the PC
+chair selects all papers on the <a href='" . hoturl("search", "q=") . "'>search page</a>
+and chooses Tags &gt; Calculate&nbsp;rank.
+To assign a global ranking to the tag “rank”, the chair enters this name for
+the tag, and the system knows to extract reviewer ranks from the corresponding
+private tag “~rank”.  (Alternatively, the chair can separately specify which
+private rank tag to use for the calculation, which in turn enables the chair to
+use a chair-only tag, such as “~~privrank” for the global ranking.)  At this
+point, the global rank can be viewed by a
+<a href='" . hoturl("search", "q=order:rank") . "'>search for “order:rank”</a>.
+
+<p>The global order is calculated using a ranking algorithm, several of which
+are available.  The algorithm can be chosen when the chair invokes
+Tags &gt; Calculate&nbsp;rank, and a default method can be configured on
+<a href='" . hoturl("settings", "group=rev") . "'>the settings page</a>.
+The default default algorithm is
+<a href='http://en.wikipedia.org/wiki/Schulze_method'>the Schulze method</a>.</p>");
+
+    _alternateRow("Comparing individual ranks", "
+Chairs can use the search keyword “compare” to find papers that are ranked
+higher or lower than other papers according to at least one PC member.
+For example, to find papers that a PC member ranked lower (meaning with a
+greater rank value) than paper #5:
+
+<p>" . _searchForm("compare:~rank>5") . "</p>
+
+<p>To find papers that a PC member ranked at least 2 ranks higher than paper #5:</p>
+
+<p>" . _searchForm("compare:~rank+2<=5") . "</p>
+
+<p>To find papers that a PC member ranked higher than paper #5, #11, or #13:</p>
+
+<p>" . _searchForm("compare:\"~rank<5 11 13\"") . "</p>
+
+<p>These searches can be generated using the “Compare” action at the bottom
+of the <a href='" . hoturl("search", "q=") . "'>search page</a>.  For instance,
+after computing a global ranking, the chair may wish to find the top 20 papers
+in the global order:</p>
+
+<p>" . _searchForm("tag:rank<=20") . "</p>
+
+<p>Then, after clicking “select all 20” at the bottom of the page, the “Compare”
+action can be used to generate a search for all papers a PC member has ranked more
+highly than one of these papers.  To exclude papers in the top 20 from this list,
+the chair can edit the resulting search to add the search term “tag:rank>20”.</p>");
+
+    _alternateRow("Uploading ranks", "
+Using the <a href='" . hoturl("offline") . "'>offline ranking form</a>, a PC member
+can download a ranking file, rearrange the lines to create a ranking, and upload
+the file.  For example, here is an initial ranking file:
 
 <pre class='entryexample'>
 # Edit the rank order by rearranging this file's lines.
@@ -803,11 +858,7 @@ X	11	Analyzing Scatter/Gather I/O Using Encrypted Epistemologies
 <tr><td class='pad'>#2</td><td class='pad'>Deconstructing Suffix Trees</td><td class='pad'>~rank#3</td></tr>
 <tr><td class='pad'>#4</td><td class='pad'>Deploying Congestion Control Using Homogeneous Modalities</td><td class='pad'>~rank#5</td></tr></table></p>
 
-<p>Since #6, #10, and #11 still had X prefixes, they were not assigned a rank.
- Searching for “order:~rank” returns the user’s personal ranking;
- administrators can search for
- “order:<i>pcname</i>~rank” to see a PC member’s ranking.
- Once a global ranking is assigned, “order:rank” will show it.</p>
+<p>Since #6, #10, and #11 still had X prefixes, they were not assigned a rank.</p>
 ");
 
     echo "</table>\n";

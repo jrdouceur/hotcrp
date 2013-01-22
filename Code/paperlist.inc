@@ -472,10 +472,9 @@ class PaperList extends BaseList {
 		$whichlll = $nlll;
 	    $t .= $barsep;
 	    $t .= "<td class='lll$nlll'><a href=\"" . selfHref(array("atab" => "compare")) . "#plact\" onclick='return crpfocus(\"plact\",$nlll)'>Compare</a></td><td class='lld$nlll'><b>:</b>";
-	    $t .= "&nbsp;" . tagg_select("comparetype", array("compare" => "any", "pccompare" => "PC"), defval($_REQUEST, "comparetype"), array("id" => "plact${nlll}_d"));
 	    $t .= "&nbsp; tag &nbsp;~<input class='textlite' type='text' name='comparetag' value=\"" . htmlspecialchars(defval($_REQUEST, "comparetag", "")) . "\" size='10' />";
 	    $t .= "&nbsp; + &nbsp; <input class='textlite' type='text' name='compareoffset' value=\"" . htmlspecialchars(defval($_REQUEST, "compareoffset", "0")) . "\" size='2' />";
-	    $t .= "&nbsp;" . tagg_select("comparator", array("<" => "<", "<=" => "<=", ">" => ">", ">=" => ">=", "=" => "=", "!=" => "!="), defval($_REQUEST, "comparator"), array("id" => "comparator"));
+	    $t .= "&nbsp;" . tagg_select("comparator", array("<" => "<", "<=" => "<=", ">" => ">", ">=" => ">=", "=" => "=", "!=" => "!="), defval($_REQUEST, "comparator"), array("id" => "plact${nlll}_d"));
 	    $t .= "&nbsp;<input type='submit' class='b' name='compare' value='Go' /></td>";
 	    $nlll++;
 	}
