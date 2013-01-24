@@ -1014,6 +1014,7 @@ function classStringIncludesAllClasses(actualClassString, testClassArray)
 
 <?php
 
+$Conf->footerScript("hotcrp_load(initRankingPage);"); // add initRankingPage() to list of JS functions called at page load time
 
 $Conf->footer();
 
