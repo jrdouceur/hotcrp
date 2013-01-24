@@ -602,7 +602,7 @@ if ($Me->amReviewer() && ($Me->privChair || $papersub)) {
 	    if ($d != "N/A")
 		echo "  <span class='deadline'>Please submit your ", ($myrow[2]==1 ? "review" : $whatNeeded), " by $d.</span><br />\n";
 	} else if ($Conf->timeReviewPaper($Me->isPC, true, true))
-	    echo "  <span class='deadline'><strong class='overdue'>Paper $whatNeeded are overdue.</strong>  They were requested by " . $Conf->printableTimeSetting("${rtyp}soft") . ".</span><br />\n";
+	    echo "  <span class='deadline'><strong class='overdue'>Paper $whatNeeded are overdue.</strong>  They were requested by " . $Conf->printableTimeSetting("${rtyp}soft", "span") . ".</span><br />\n";
 	else if (!$Conf->timeReviewPaper($Me->isPC, true, true, true))
 	    echo "  <span class='deadline'>The <a href='", hoturl("deadlines"), "'>deadline</a> for submitting " . ($Me->isPC ? "PC" : "external") . " $whatNeeded has passed.</span><br />\n";
 	else

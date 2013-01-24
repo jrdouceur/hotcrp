@@ -1257,7 +1257,8 @@ class PaperTable {
 	echo "<input id='foldrank_d' class='textlite' type='text' size='4' name='rank' value=\"$rp\" onchange='Miniajax.submit(\"rankform\")' tabindex='1' />",
 	    " <input class='b fx7' type='submit' value='Save' />",
 	    " <span id='rankformresult'></span>",
-	    " <div class='hint'><strong>Tip:</strong> <a href='", hoturl("search", "q=" . urlencode("editsort:#~$tag")), "'>Search “editsort:#~${tag}”</a> or the <a href='", hoturl("ranks"), "'>ranking page</a> to rank many papers at once.</div>",
+	    " <div class='hint'><strong>Tip:</strong> <a href='", hoturl("search", "q=" . urlencode("editsort:#~$tag")), "'>Search “editsort:#~${tag}”</a> or <a href='", hoturl("ranks"), "'>the ranking page</a> to rank many papers at once.</div>",
+            //  or <a href='", hoturl("offline"), "'>use offline reviewing</a> to rank many papers at once.</div>",
 	    "</div></form>",
 	    "<div class='fn'>",
 	    ($rp === "" ? "None" : $rp);

@@ -55,6 +55,7 @@ class Tagger {
     const NOVALUE = 4;
     const NOCHAIR = 8;
     const ALLOWSTAR = 16;
+    const NOUSERPRIVATE = 32;
 
     public $error_html = false;
     private $contact = null;
@@ -197,7 +198,8 @@ class Tagger {
             return "Tag values aren’t allowed here.";
         else if ($tag[0] === "~" && $tag[1] === "~" && ($flags & self::NOCHAIR))
             return "Tag “${tag}” is exclusively for chairs.";
-        else if ($tag[0] === "~" && $tag[1] !== "~" && ($flags & self::NOPRIVATE))
+        else if ($tag[0] === "~" && (($flags & self::NOPRIVATE)
+                                     || ($tag[1] !== "~" && ($flags & self::NOUSERPRIVATE))))
             return "Twiddle tags aren’t allowed here.";
         else if (($tag === "none" || $tag === "any") && !($flags & self::ALLOWRESERVED))
             return "Tag “${tag}” is reserved.";
