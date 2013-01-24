@@ -1053,12 +1053,13 @@ function PaperRow(rows, l, r, index) {
     this.l = l;
     this.r = r;
     this.index = index;
-    this.tagvalue = null;
+    this.tagvalue = false;
     this.id = rows[l].getAttribute("hotcrpid");
     var inputs = rows[l].getElementsByTagName("input");
     var i, prefix = "tag:" + dragtag + " ";
     for (i in inputs)
-	if (inputs[i].name.substr(0, prefix.length) == prefix) {
+	if (inputs[i].name
+	    && inputs[i].name.substr(0, prefix.length) == prefix) {
 	    this.entry = inputs[i];
 	    this.tagvalue = parse_tagvalue(inputs[i].value);
 	    break;
@@ -1223,7 +1224,8 @@ function sorttag_onchange() {
 	    var id = rowanal[srcindex].id, i, ltv;
 	    for (i = 0; i < rowanal.length; ++i) {
 		ltv = rowanal[i].tagvalue;
-		if ((tv !== false && ltv === false)
+		if (!rowanal[i].entry
+		    || (tv !== false && ltv === false)
 		    || (tv !== false && ltv !== null && ltv > tv)
 		    || (ltv === tv && rowanal[i].id > id))
 		    break;
