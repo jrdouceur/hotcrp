@@ -6,8 +6,6 @@
 require_once("Code/header.inc");
 require_once("Code/paperlist.inc");
 require_once("Code/search.inc");
-require_once("Code/tags.inc");
-require_once("Code/options.inc");
 
 $Opt["stylesheets"][] = "dragstyle.css"; // style sheet for client-side drag/drop elements
 
@@ -184,7 +182,7 @@ if (!$initialRankingIsStrict)
     <div id="ghostpaper" class="dragpaper">this is the ghostpaper div</div>
 
     <br />
-    <form id="rankform" action="<?= hoturl_post("search", "ajax=1&amp;tagact=1&amp;tag=%7E{$Conf->settingText('tag_rank')}") ?>" method="post">
+    <form id="rankform" action="<?php echo hoturl_post("search", "ajax=1&amp;tagact=1&amp;tag=%7E" . $Conf->settingText('tag_rank')) ?>" method="post">
         <input type="button" name="undoallchanges" value="Undo all changes" onclick="undoAllChanges()" />
         <input type="button" name="undochange" value="Undo change" onclick="undoChange()" />
         <input type="button" name="redochange" value="Redo change" onclick="redoChange()" />
@@ -231,7 +229,7 @@ if (!$initialRankingIsStrict)
                         <div id="unrankedinnerdiv">
                             <table class="dragpapertable" id="unrankedtable">
                                 <tbody id="unrankedtbody">
-                                    <?= unrankedPaperTableRows() ?>
+                                    <?php echo unrankedPaperTableRows() ?>
                                 </tbody>
                             </table>
                         </div>
@@ -264,7 +262,7 @@ if (!$initialRankingIsStrict)
 function setInitialPaperRanks()
 {
     // these calls must be ordered by increasing rank
-    <?= $invocationsOfChangePaperRank ?>
+    <?php echo $invocationsOfChangePaperRank ?>
 }
 </script>
 
