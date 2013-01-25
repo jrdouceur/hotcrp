@@ -17,11 +17,15 @@ class PaperColumn extends Column {
         parent::__construct($name, $view, $extra);
     }
 
+    public static function lookup_local($name) {
+        return defval(self::$by_name, $name, null);
+    }
+
     public static function lookup($name) {
         if (isset(self::$by_name[$name]))
             return self::$by_name[$name];
         foreach (self::$factories as $prefix => $f)
-            if (str_starts_with($name, $prefix)
+            if (str_starts_with(strtolower($name), $prefix)
                 && ($x = $f->make_field($name)))
                 return $x;
         return null;
@@ -35,6 +39,7 @@ class PaperColumn extends Column {
         return $fdef;
     }
     public static function register_factory($prefix, $f) {
+        $prefix = strtolower($prefix);
         assert(!isset(self::$factories[$prefix]));
         self::$factories[$prefix] = $f;
     }
@@ -586,8 +591,15 @@ class PreferencePaperColumn extends PaperColumn {
         if (!$pl->contact->isPC)
             return false;
         $queryOptions["reviewerPreference"] = $queryOptions["topicInterestScore"] = 1;
-        if ($this->editable && $visible > 0)
+        if ($this->editable && $visible > 0) {
+            $arg = ($pl->contact->privChair ? "&amp;reviewer=" . $pl->search->cid : "");
+            $Conf->footerHtml(
+                 tagg_form(hoturl_post("paper", "setrevpref=1$arg"),
+                           array("id" => "prefform")) . "<div>"
+                 . tagg_hidden("p") . tagg_hidden("revpref", "")
+                 . "</div></form>", "prefform");
             $Conf->footerScript("add_revpref_ajax()");
+        }
 	return true;
     }
     private static function _sortReviewerPreference($a, $b) {
@@ -791,10 +803,10 @@ class TagPaperColumn extends PaperColumn {
         return true;
     }
     protected function _tag_value($row) {
-        if (($p = strpos(" " . $row->paperTags, $this->ctag)) === false)
+        if (($p = strpos($row->paperTags, $this->ctag)) === false)
             return null;
         else
-            return (int) substr($row->paperTags, $p + strlen($this->ctag) - 1);
+            return (int) substr($row->paperTags, $p + strlen($this->ctag));
     }
     private function _sort_tag($a, $b) {
         $av = $a->_sort_info;
@@ -842,8 +854,16 @@ class EditTagPaperColumn extends TagPaperColumn {
         global $Conf;
         if (($p = parent::prepare($pl, $queryOptions, $visible))
             && $visible > 0) {
-            $Conf->footerHtml("<form id='edittagajaxform' method='post' action='" . hoturl_post("paper", "settags=1&amp;forceShow=1") . "' enctype='multipart/form-data' accept-charset='UTF-8' style='display:none'><div><input name='p' value='' /><input name='addtags' value='' /><input name='deltags' value='' /></div></form>", "edittagajaxform");
-            if ($pl->sorter->type == $this->name && !$pl->sorter->reverse
+            $Conf->footerHtml(
+                 tagg_form(hoturl_post("paper", "settags=1&amp;forceShow=1"),
+                           array("id" => "edittagajaxform",
+                                 "style" => "display:none")) . "<div>"
+                 . tagg_hidden("p") . tagg_hidden("addtags")
+                 . tagg_hidden("deltags") . "</div></form>",
+                 "edittagajaxform");
+            if (("edit" . $pl->sorter->type == $this->name
+                 || $pl->sorter->type == $this->name)
+                && !$pl->sorter->reverse
                 && $this->is_value)
                 $Conf->footerScript("add_edittag_ajax('$this->dtag')");
             else
@@ -865,23 +885,31 @@ class EditTagPaperColumn extends TagPaperColumn {
 class ScorePaperColumn extends PaperColumn {
     public $score;
     private static $registered = array();
-    public function __construct($name, $foldnum) {
-        parent::__construct($name, Column::VIEW_COLUMN, array());
+    public function __construct($score, $foldnum) {
+        parent::__construct($score, Column::VIEW_COLUMN, array());
         $this->minimal = $this->sortable = true;
         $this->cssname = "score";
         $this->foldnum = $foldnum;
-        $this->score = $name;
+        $this->score = $score;
     }
     public static function lookup_all() {
         return self::$registered;
     }
-    public static function register($fdef) {
+    public static function register_score($fdef, $order) {
         PaperColumn::register($fdef, $fdef->foldnum);
-        $rf = reviewForm();
-        if (($p = array_search($fdef->score, $rf->fieldOrder)) !== false) {
-            self::$registered[$p] = $fdef;
+        if ($order !== false) {
+            self::$registered[$order] = $fdef;
             ksort(self::$registered);
         }
+    }
+    public function make_field($name) {
+        global $reviewScoreNames;
+        $rf = reviewForm();
+        if ((isset($rf->reviewFields[$name])
+             || ($name = $rf->unabbreviateField($name)))
+            && $rf->reviewFields[$name] == 1)
+            return parent::lookup_local($name);
+        return null;
     }
     public function prepare($pl, &$queryOptions, $visible) {
         if (!$pl->scoresOk)
@@ -1020,7 +1048,7 @@ class TagReportPaperColumn extends PaperColumn {
         return !$pl->contact->canViewTags($row);
     }
     public function content($pl, $row) {
-        if (($t = " " . $row->paperTags) === " ")
+        if (($t = $row->paperTags) === "")
             return "";
         $a = array();
         foreach (pcMembers() as $pcm) {
@@ -1157,7 +1185,7 @@ function initialize_paper_columns() {
     PaperColumn::register(new TopicScorePaperColumn("topicscore", true), 36);
     PaperColumn::register(new TopicListPaperColumn("topics", 13), 73);
     PaperColumn::register(new PreferencePaperColumn("revpref", false), 39);
-    PaperColumn::register(new PreferencePaperColumn("revprefedit", true), 40);
+    PaperColumn::register(new PreferencePaperColumn("editrevpref", true), 40);
     PaperColumn::register(new PreferenceListPaperColumn("allrevpref"), 44);
     PaperColumn::register(new DesirabilityPaperColumn("desirability"), 43);
     PaperColumn::register(new ReviewerListPaperColumn("reviewers", 10), 75);
@@ -1178,10 +1206,13 @@ function initialize_paper_columns() {
     PaperColumn::register_factory("edittagval:", new EditTagPaperColumn(null, null, true));
 
     $nextfield = 50; /* BaseList::FIELD_SCORE */
-    foreach ($reviewScoreNames as $k => $n) {
-        ScorePaperColumn::register(new ScorePaperColumn($n, $nextfield));
+    $rf = reviewForm();
+    foreach ($reviewScoreNames as $n) {
+        $score = new ScorePaperColumn($n, $nextfield);
+        ScorePaperColumn::register_score($score, array_search($n, $rf->fieldOrder));
         ++$nextfield;
     }
+    PaperColumn::register_factory("", $score);
 
     $nextfold = 21;
     $paperListFormulas = array();

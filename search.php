@@ -1096,9 +1096,10 @@ $tselect = PaperSearch::searchTypeSelector($tOpt, $_REQUEST["t"], 1);
 $displayOptions = array();
 
 function displayOptionCheckbox($type, $column, $title, $opt = array()) {
-    global $displayOptions, $pldisplay;
-    $checked = (defval($_REQUEST, "show$type")
-		|| strpos($pldisplay, " $type ") !== false);
+    global $displayOptions, $pldisplay, $pl;
+    $checked = ($pl ? !$pl->is_folded($type)
+                : (defval($_REQUEST, "show$type")
+                   || strpos($pldisplay, " $type ") !== false));
     $loadresult = "";
 
     if (!isset($opt["onchange"])) {
