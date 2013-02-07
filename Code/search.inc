@@ -970,7 +970,10 @@ class PaperSearch {
 	$paperNums = array();
 	while ($row = edb_row($result))
 	    $paperNums[] = $row[0];
-	$qt[] = new SearchTerm("pn", 0, array($paperNums, array()));
+	if (empty($paperNums))
+	    $qt[] = new SearchTerm("f");
+	else
+	    $qt[] = new SearchTerm("pn", 0, array($paperNums, array()));
     }
 
     function _searchOptions($word, &$qt, $error) {
